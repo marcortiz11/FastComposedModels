@@ -1,0 +1,2 @@
+
+(probability_threshold_pareto.py:55676): Gdk-CRITICAL **: gdk_cursor_new_for_display: assertion 'GDK_IS_DISPLAY (display)' failed

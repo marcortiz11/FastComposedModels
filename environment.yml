@@ -1,0 +1,6 @@
+name: FastComposedModels
+dependencies:
+        - python=3.*
+        - numpy
+        - matplotlib
+        - protobuf

@@ -1,0 +1,9 @@
+# Ignore symbolic link to git
+Data/
+Definitions/
+results/
+figs/
+figures/
+.idea/
+tmp/
+*.pkl
