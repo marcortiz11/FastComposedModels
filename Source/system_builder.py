@@ -115,17 +115,21 @@ class SystemBuilder:
 		eval_results = eval.evaluate(self, start_id, classifier_dict=classifier_dict, phases=phases)
 		return classifier_dict, eval_results
 
-	# Creates a copy of the ensembled system
+	# Creates a copy of the ensemble system
 	def copy(self):
-		new_sys = copy.deepcopy(self)  # SystemBuilder()
-		"""
-		new_sys.components = copy.deepcopy(self.components)
-		new_sys.verbose = copy.copy(self.verbose)
-		new_sys.metrics = copy.deepcopy(self.metrics)
-		new_sys.system = copy.deepcopy(self.system)  # Link component<->system
-		new_sys.start = copy.copy(self.start)
-		"""
-		warnings.warn("WARNING: NEED TO LINK SYSTEM<->COMPONENTS")
+		new_sys = SystemBuilder()
+		new_sys.system = copy.deepcopy(self.system)
+		new_sys.verbose = self.verbose
+		new_sys.start = self.start
+		new_sys.components = {}
+		for data in new_sys.system.data:
+			new_sys.components[data.id] = data
+		for trigger in new_sys.system.trigger:
+			new_sys.components[trigger.id] = trigger
+		for classifier in new_sys.system.classifier:
+			new_sys.components[classifier.id] = classifier
+		for merger in new_sys.system.merger:
+			new_sys.components[merger.id] = merger
 		return new_sys
 
 	# ------------- GETTERS AND SETTERS --------------------#
