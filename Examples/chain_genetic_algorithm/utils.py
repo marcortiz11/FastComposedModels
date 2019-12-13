@@ -31,9 +31,11 @@ def plot_population(R, R_old, R_models, iter, time=None):
     y = [v.test['system'].accuracy for (k, v) in R_models.items()]
     plt.scatter(x, y, label="Initial population", color="black", s=40)
 
+    """
     x = [v.test['system'].time for (k, v) in R_old.items()]
     y = [v.test['system'].accuracy for (k, v) in R_old.items()]
     plt.scatter(x, y, label="Dead individuals", color="red", s=5)
+    """
 
     x = [v.test['system'].time for (k, v) in R.items()]
     y = [v.test['system'].accuracy for (k, v) in R.items()]

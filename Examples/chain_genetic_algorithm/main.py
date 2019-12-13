@@ -11,6 +11,7 @@ import argparse
 import sys
 import random
 import os
+import json
 
 global args
 
@@ -28,6 +29,10 @@ def argument_parse(argv):
     parser.add_argument("--param_constraint", default=100000, type=float, help="Param constraint of the ensemble")
     parser.add_argument("--acc_constraint", default=0.8, type=float, help="Accuracy constraint")
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
+    parser.add_argument("--print", type=str, help="Folder in which to save the results of the execution")
+    parser.add_argument("--a", default=100, type=float)
+    parser.add_argument("--b", default=1, type=float)
+
     return parser.parse_args(argv)
 
 
@@ -58,59 +63,70 @@ def generate_initial_population():
     return P
 
 
-def mutation_operations(P):
-    # Update counter for the children
-    # c_id = c_file if possible
-    P_mutation = []
-    for p in P:
-        # Extend chain
-        r = random.random()
-        if args.pm > r and len(p.get_message().classifier) < 4:
-            new_p = p.copy()
-            new_p.set_sysid(str(random.random()))
-            c_file = utils.pick_random_classifier(args)
-            c_id = __get_classifier_name(c_file)
-            om.extend_chain_pt(new_p, c_id, utils.pick_random_threshold(args), c_file=c_file)
-            P_mutation.append(new_p)
-        # Replace classifier
+def mutation_operation(P, fit_vals):
+
+    offspring = []
+    p = P[selection.spin_roulette(fit_vals)]
+
+    # Extend chain
+    r = random.random()
+    if args.pm > 0 and len(p.get_message().classifier) < 4:
+        new_p = p.copy()
+        new_p.set_sysid(str(random.random()))
+        c_file = utils.pick_random_classifier(args)
+        c_id = __get_classifier_name(c_file)
+        om.extend_chain_pt(new_p, c_id, utils.pick_random_threshold(args), c_file=c_file)
+        offspring.append(new_p)
+
+    # Replace classifier
+    r = random.random()
+    if args.pm > 0:
+        new_p = p.copy()
+        new_p.set_sysid(str(random.random()))
+        c_file_new = utils.pick_random_classifier(args)
+        c_id_new = __get_classifier_name(c_file_new)
+        om.replace_classifier(new_p, utils.pick_random_classifier(args, new_p), c_id_new, c_file=c_file_new)
+        offspring.append(new_p)
+
+    # Change threshold
+    r = random.random()
+    if args.pm > 0:
+        new_p = p.copy()
+        new_p.set_sysid(str(random.random()))
+        sign = 2*(random.random() > 0.5) - 1
+        om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th,)
+        offspring.append(new_p)
+
+    return offspring
+
+
+def crossover_operation(P, fit_vals):
+
+    ai = selection.spin_roulette(fit_vals)
+    bi = selection.spin_roulette(fit_vals)
+
+    triggersA = P[ai].get_message().trigger
+    triggersB = P[bi].get_message().trigger
+
+    offspring = []
+
+    if len(triggersA) > 0 and len(triggersB) > 0:
+        pointA = triggersA[random.randint(0, len(triggersA)-1)].id
+        pointB = triggersB[random.randint(0, len(triggersB)-1)].id
+        offspring = ob.singlepoint_crossover(P[ai], P[bi], pointA, pointB)
+
+    return offspring
+
+
+def generate_offspring(P, fit_vals):
+    offspring = []
+    while len(offspring) < args.offspring:
         r = random.random()
         if args.pm > r:
-            new_p = p.copy()
-            new_p.set_sysid(str(random.random()))
-            c_file_new = utils.pick_random_classifier(args)
-            c_id_new = __get_classifier_name(c_file_new)
-            om.replace_classifier(new_p, utils.pick_random_classifier(args, new_p), c_id_new, c_file=c_file_new)
-            P_mutation.append(new_p)
-        # Change threshold
-        r = random.random()
-        if args.pm > 0:
-            new_p = p.copy()
-            new_p.set_sysid(str(random.random()))
-            sign = 2*(random.random() > 0.5) - 1
-            om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th,)
-            P_mutation.append(new_p)
-    return P_mutation
-
-
-# Points of crossover by triggers
-def crossover_operations(P, fit_vals):
-    P_offspring = []
-
-    for i in range(args.offspring//2):
-        #  Pick 2 parents
-        ai = selection.spin_roulette(fit_vals)
-        bi = selection.spin_roulette(fit_vals)
-        # Choose crossover point for a and b individuals
-        triggersA = P[ai].get_message().trigger
-        triggersB = P[bi].get_message().trigger
-
-        if len(triggersA) > 0 and len(triggersB) > 0:
-            pointA = triggersA[random.randint(0, len(triggersA)-1)].id
-            pointB = triggersB[random.randint(0, len(triggersB)-1)].id
-            kids = ob.singlepoint_crossover(P[ai], P[bi], pointA, pointB)
-            P_offspring += kids
-
-    return P_offspring
+            offspring += mutation_operation(P, fit_vals)
+        if args.pc > r:
+            offspring += crossover_operation(P, fit_vals)
+    return offspring
 
 
 def select_more_fit(P, fit, n):
@@ -123,7 +139,8 @@ def select_more_fit(P, fit, n):
     """
     selected = selection.roulette_selection(fit, n)
     new_P = [P[i] for i in selected]
-    return new_P
+    new_fit = [fit[i] for i in selected]
+    return new_P, new_fit
 
 
 if __name__ == "__main__":
@@ -132,49 +149,65 @@ if __name__ == "__main__":
     args = argument_parse(sys.argv[1:])
     random.seed()  # Initialize the random generator
 
-    # Initial population
-    P = generate_initial_population()
     best_fit = []
     R = {}
     R_old = {}
     R_models = io.read_pickle(os.path.join(os.environ['FCM'], 'Examples', 'pushing_paretto_chain', 'results', 'front45_models_validation', 'models.pkl'))
+
+    # Initial population
+    P = generate_initial_population()
+    fit = fit_fun.f1_time_penalization(P, time_constraint=args.time_constraint)
 
     # Start the loop over generations
     iteration = 0
     improving = True
     while iteration < args.iterations and improving:
 
-        fit = fit_fun.f1_time_penalization(P, time_constraint=args.time_constraint)
+        # Generate offspring (crossover+mutation)
+        P_offspring = generate_offspring(P, fit)
 
-        # Crossover operations
-        P_cross = crossover_operations(P, fit)
-        fit_cross = fit_fun.f1_time_penalization(P_cross, time_constraint=args.time_constraint)
+        # Evaluate offspring individuals
+        fit_offspring = fit_fun.f1_time_penalization(P_offspring, time_constraint=args.time_constraint, a=args.a, b=args.b)
 
-        # Mutation operations
-        P_mut = mutation_operations(P)
-        fit_mut = fit_fun.f1_time_penalization(P_mut, time_constraint=args.time_constraint)
-
-        #Selection
-        P = select_more_fit(P+P_cross+P_mut, fit+fit_cross+fit_mut, args.population)
-        iteration += 1
+        # Selection
+        P, fit = select_more_fit(P+P_offspring, fit+fit_offspring, args.population)
 
         # Performance evaluation code
-        best_fit.append(max(fit))
-        print("Iteration %d, best:%f" % (iteration, best_fit[-1]))
+        best_fit.append(sum(fit)/len(fit))
+        print("Iteration %d, average fit:%f" % (iteration, best_fit[-1]))
 
         # Plotting population
         R_old.update(R)
         R.clear()
+
         for p in P:
             R[p.get_sysid()] = ev.evaluate(p, p.get_start(), phases=["test"])
         utils.plot_population(R, R_old, R_models, iteration, args.time_constraint)
 
-        # Speedup and Increment in accuracy with respect to best single model
-        # utils.print_stats_population(R, R_models, args)
+        iteration += 1
 
+    # Save the results
+    meta_data_file = os.path.join('./results', 'front45_models_validation', 'metadata.json')
+    arguments_dict = args.__dict__
+    meta_data_dict = {}
+
+    if not os.path.exists(meta_data_file):
+        with open(meta_data_file, 'w') as file:
+            json.dump(meta_data_dict, file)
+
+    with open(meta_data_file) as file:
+        meta_data_dict = json.load(file)
+
+    # Save results
     pid = str(os.getpid())
     res_dir = os.path.join('./results', 'front45_models_validation', pid)
     os.makedirs(res_dir)
-    io.save_pickle(os.path.join(res_dir, 'R'), R_old.update(R))
+    R_old.update(R)
+    io.save_pickle(os.path.join(res_dir, 'R'), R_old)
+
+    # Update meta_data file
+    meta_data_dict[pid] = arguments_dict
+    with open(meta_data_file, 'w') as file:
+        json.dump(meta_data_dict, file, indent=4)
 
 
