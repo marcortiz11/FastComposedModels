@@ -6,6 +6,8 @@ import warnings
 class SystemBuilder:
 
 	def __check_existence(self, c):
+		if c.id in self.components:
+			print(self.system)
 		assert c.id not in self.components, "Two components with the same id: " + c.id
 
 	def __init__(self, verbose=True, id=""):
@@ -145,6 +147,8 @@ class SystemBuilder:
 
 	# Returns the component in protobuf message
 	def get(self, id):
+		if id not in self.components:
+			print(self.system)
 		return self.components[id]
 
 	# Get start component for evaluation

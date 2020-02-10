@@ -1,1 +1,0 @@
-/var/spool/slurmd/job3175679/slurm_script: line 5: 38489 Bus error               python fcc.py --datasets front45_models_validation --step_th 0.2 --fc 0

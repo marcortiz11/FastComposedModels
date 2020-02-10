@@ -1,8 +1,10 @@
+from Source.genetic_algorithm.operations_mutation import __make_data_and_dataset
+import Source.make_util as make
 import copy
+import os
+
 
 #---- VERSION 1: Find the best chain ----#
-
-
 def remove(a, point, first=True):
     """
     :param a: system
@@ -25,6 +27,8 @@ def remove(a, point, first=True):
     # Finally remove myself
     if not first:
         a.remove(point)
+    else:
+        component.component_id = ''  # There's nothing after
 
 
 def merge_chains_by_point(a, b, pointA, pointB):
@@ -34,7 +38,20 @@ def merge_chains_by_point(a, b, pointA, pointB):
     :param point: Point in the chain b form which to start adding
     :return: New chain
     """
-    next = b.get(pointB).component_ids  # Always should be a trigger
+
+    next = [b.get(pointB).component_id] if b.get(pointB).component_id != '' else []  # Always should be a Classifier
+
+    if len(next) > 0:
+        th = float(next[0].split("_")[2])
+        trigger_name = "trigger_classifier_" + str(th) + "_" + pointA
+        trigger_classifier_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'tmp',
+                                               trigger_name + '.pkl')
+        trigger = make.make_trigger(trigger_name,
+                                    make.make_classifier('', classifier_file=trigger_classifier_file),
+                                    component_ids=b.get(next[0]).component_ids)
+        a.add_trigger(trigger)
+        a.get(pointA).component_id = trigger_name
+        next = trigger.component_ids
 
     while len(next) > 0:
         assert len(next) == 1, "ERROR: Support only for chain ensemble with crossover operations"
@@ -49,22 +66,18 @@ def merge_chains_by_point(a, b, pointA, pointB):
 
         elif c.DESCRIPTOR.name == "Trigger":
             assert c.classifier.classifier_file != '', "ERROR: Trigger's classifier should already be trained"
-            next = c.component_ids  # El classificador del trigger ha d'estar entrenat
+            next = c.component_ids
             a.add_trigger(c_)
-
-    # Linkar la cadena amb el primer nou element
-    a.get(pointA).component_ids[:] = b.get(pointB).component_ids
 
 
 def repeated_classifiers(a, b, pointB):
-    classifiers = a.get_message().classifier
-    next = b.get(pointB).component_ids  # Always should be a trigger
+    classifiers = [classifier.id for classifier in a.get_message().classifier]
+    next = [b.get(pointB).component_id] if b.get(pointB).component_id != '' else []  # Always should be a Classifier
 
     while len(next) > 0:
         assert len(next) == 1, "ERROR: Support only for chain ensemble with crossover operations"
         next_id = next[0]
         c = b.get(next_id)
-
         if c.DESCRIPTOR.name == "Classifier":
             if c.id in classifiers:
                 return True
@@ -72,7 +85,7 @@ def repeated_classifiers(a, b, pointB):
         elif c.DESCRIPTOR.name == "Trigger":
             next = c.component_ids  # El classificador del trigger ha d'estar entrenat
 
-    return True
+    return False
 
 
 def singlepoint_crossover(a, b, pointA, pointB):
@@ -84,8 +97,8 @@ def singlepoint_crossover(a, b, pointA, pointB):
     :return: Two new individuals, the child of a and b.
     """
 
-    assert a.get(pointA).DESCRIPTOR.name == "Trigger" and b.get(pointB).DESCRIPTOR.name == "Trigger", \
-        "Crossover points A and B should point to triggers"
+    assert a.get(pointA).DESCRIPTOR.name == "Classifier" and b.get(pointB).DESCRIPTOR.name == "Classifier", \
+        "Crossover points A and B should point to Classifiers"
 
 
     offspring = []

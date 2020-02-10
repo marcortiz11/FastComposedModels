@@ -97,7 +97,7 @@ def replace_classifier(i, c_id, c_id_new, c_file = None):
 
     if c_id not in existing_classifier_id:
         classifier = make.make_classifier(c_id_new, c_file)
-        if i.get(c_id).HasField("component_id"):
+        if i.get(c_id).component_id != '':
 
             # Check it is a trigger
             trigger_id = i.get(c_id).component_id
@@ -153,7 +153,7 @@ def update_threshold(i, c_id, step):
     """
 
     c_file = i.get(c_id).classifier_file
-    if i.get(c_id).HasField("component_id"):
+    if i.get(c_id).component_id != '':
 
         trigger_id = i.get(c_id).component_id
         trigger_old = i.get(trigger_id)

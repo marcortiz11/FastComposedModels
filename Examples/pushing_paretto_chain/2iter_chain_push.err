@@ -1,3 +1,0 @@
-
-(example.py:159767): Gdk-CRITICAL **: gdk_cursor_new_for_display: assertion 'GDK_IS_DISPLAY (display)' failed
-/var/spool/slurmd/job3132683/slurm_script: line 5: 159767 Bus error               python example.py --datasets front45_models_validation --iterations 3

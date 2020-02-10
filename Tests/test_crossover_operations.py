@@ -81,21 +81,24 @@ if __name__ == '__main__':
     chain0 = build_chain([c0_file, c1_file, c2_file],
                       ['V001_DenseNet_s3_71', 'V001_DenseNet_s1_3', 'V001_DenseNet_s2_32'],
                       [1.1, 1.1],
-                      ['trigger0', 'trigger1'],
+                      ['trigger_classifier_1.1_V001_DenseNet_s3_71', 'trigger_classifier_1.1_V001_DenseNet_s1_3'],
                       'test_crossover_chain0')
 
     chain1 = build_chain([c0_file, c2_file],
                       ['V001_DenseNet_s3_71', 'V001_DenseNet_s2_32'],
                       [1.1],
-                      ['trigger0'],
+                      ['trigger_classifier_1.1_V001_DenseNet_s3_71'],
                       'test_crossover_chain1')
-
-    # TODO: Crossover operation on the two chains
 
     R_chain0 = eval.evaluate(chain0, chain0.get_start())
     R_chain1 = eval.evaluate(chain1, chain1.get_start())
 
-    c = ob.singlepoint_crossover(chain0, chain1, 'trigger1', 'trigger0')
+    c = ob.singlepoint_crossover(chain0, chain1, 'V001_DenseNet_s3_71', 'V001_DenseNet_s3_71')
+
+    print(c[0].get_message())
+    print("---------------------------")
+    print(c[1].get_message())
+
     R = eval.evaluate(c[0], c[0].get_start())
     R_ = eval.evaluate(c[1], c[1].get_start())
 

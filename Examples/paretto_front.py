@@ -93,6 +93,89 @@ def get_front_accuracy_params(R):
     return dict(paretto_models)
 
 
+def get_speedup_front(f0, f1, e, phase = None):
+    """
+    SUMMARY :Given a resource, compute the speedup of one front vs the other.
+            Speedup = same accuracy less time
+    :param f0: Front of classifiers/models 1
+    :param f1: Front of classifiers/models 2
+    :param e: Epsilon = ammount of resource (time,params)
+    :return: Speedup of the front1 vs front0 given e
+    """
+    if phase == "test":
+        f0 = [(k, f.test) for k, f in f0]
+        f1 = [(k, f.test) for k, f in f1]
+
+    acc = 0
+    time = 0
+    for k, v in f0:
+        if v['system'].time < e:
+            acc = v['system'].accuracy
+            time = v['system'].time
+
+    speedup = 0
+    for k, v in f1:
+        if v['system'].time < e:
+            speedup = time/v['system'].time
+        if v['system'].accuracy > acc: break
+    return speedup
+
+
+def get_decrease_params_front(f0, f1, e, phase = None):
+    """
+    SUMMARY :Given a resource, compute the speedup of one front vs the other.
+            Speedup = same accuracy less time
+    :param f0: Front of classifiers/models 1
+    :param f1: Front of classifiers/models 2
+    :param e: Epsilon = ammount of resource (time,params)
+    :return: Speedup of the front1 vs front0 given e
+    """
+    if phase == "test":
+        f0 = [(k, f.test) for k, f in f0]
+        f1 = [(k, f.test) for k, f in f1]
+
+    acc = 0
+    params = 0
+    for k, v in f0:
+        if v['system'].params < e:
+            acc = v['system'].accuracy
+            params = v['system'].params
+
+    decrease = 1
+    for k, v in f1:
+        if v['system'].params < e:
+            decrease = v['system'].params/params
+        if v['system'].accuracy > acc: break
+    return decrease
+
+
+def get_increment_front(f0, f1, t, phase=None):
+    """
+    SUMMARY :Given a resource, compute the increment of one front vs the other.
+            Speedup = more accuracy less time
+    :param f0: Front of classifiers/models 1
+    :param f1: Front of classifiers/models 2
+    :param e: Epsilon = ammount of resource (time,params)
+    :return: Speedup of the front1 vs front0 given e
+    """
+
+    if phase == "test":
+        f0 = [(k,f.test) for k,f in f0]
+        f1 = [(k,f.test) for k,f in f1]
+
+    acc = 0
+    for k, v in f0:
+        if v['system'].time < t:
+            acc = v['system'].accuracy
+
+    increment = -1
+    for k, v in f1:
+        i = v['system'].accuracy - acc
+        if v['system'].time < t and i > increment:
+            increment = i
+    return increment
+
+
 
 if __name__ == "__main__":
     R = io.read_pickle("./Results/R_2_3_part0")

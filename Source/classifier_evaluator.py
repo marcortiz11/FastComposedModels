@@ -37,7 +37,7 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids, pha
                                                       c_dict[phase]['time_instance'][indices])))
 
     # Now classifier can call other components
-    if c.HasField('component_id'):
+    if c.component_id != '':
         contribution_component = eval.__evaluate(sys, results, sys.get(c.component_id), check_classifiers,
                                             classifier_dict, input_ids=input_ids, phase=phase)
         contribution['gt'].update(contribution_component['gt'])

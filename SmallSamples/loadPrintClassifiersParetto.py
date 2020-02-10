@@ -5,46 +5,51 @@ import Source.system_evaluator as eval
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import time
+import random
 
 
-def plot_accuracy_parameters(record):
+def plot_accuracy_parameters_front_line(front, color='black', label="Solution set 1"):
     plt.title("Solution Space")
     plt.xlabel("Resource")
     plt.ylabel("Performance")
     plt.xscale("log")
-    for key in record.keys():
-        x = record[key]['system'].params
-        y = record[key]['system'].accuracy
-        if '_vs_' in key:  # Composed models
-            th = float(key[key.find('=')+1:])
-            cmap = cm.get_cmap("jet")
-            colors = cmap(np.linspace(0, 1, 10))
-            plt.scatter(x, y, color=colors[int(th*10)], s=10)
-        else:
-            color = 'red'
-            plt.scatter(x, y, color=color, s=40)
-        # plt.annotate(key, (x, y))
-    plt.show()
+    X = []
+    Y = []
+    for i in front.items():
+        x = i[1]['system'].params
+        X.append(x)
+        X.append(x)
+        y = i[1]['system'].accuracy
+        Y.append(y)
+        Y.append(y)
+    X = X[1:]
+    Y = Y[:-1]
+    plt.plot(X, Y, color=color, label=label)
 
-
-def plot_accuracy_time(record):
+def plot_accuracy_parameters(record, color='black', label="Solution set 1"):
     plt.title("Solution Space")
     plt.xlabel("Resource")
     plt.ylabel("Performance")
     plt.xscale("log")
+    X = []
+    Y = []
     for key in record.keys():
-        x = record[key].time
-        y = record[key].accuracy
-        if '_vs_' in key:
-            th = float(key[key.find('=') + 1:])
-            cmap = cm.get_cmap("jet")
-            colors = cmap(np.linspace(0, 1, 10))
-            plt.scatter(x, y, color=colors[int(th * 10)], s=10)
-        else:
-            color = 'black' if 'modified' in key else 'red'
-            plt.scatter(x, y, color=color, s=40)
-        # plt.annotate(key, (x, y))
-    plt.show()
+        X.append(record[key].test['system'].params)
+        Y.append(record[key].test['system'].accuracy)
+    plt.scatter(X, Y, color=color, s=20, label=label)
+
+def plot_accuracy_time(record, color='black', label="Solution set 1"):
+    plt.title("Solution Space")
+    plt.xlabel("Resource")
+    plt.ylabel("Performance")
+    plt.grid(True, alpha=0.3)
+    #plt.xscale("log")
+    X = []
+    Y = []
+    for key in record.keys():
+        X.append(record[key].test['system'].time)
+        Y.append(record[key].test['system'].accuracy)
+    plt.scatter(X, Y, color=color, s=20, label=label)
 
 
 def plot_accuracy_dataset(record, dataset):
@@ -69,28 +74,24 @@ if __name__ == "__main__":
     # Get the CIFAR-100 models form the Classifiers dir
     import os
     Dataset_Path = "../Definitions/Classifiers/"
-    dsets = ["cifar100-32-dev",
-             "cifar10-32-dev",
-             "fashion-mnist-32-dev",
-             "flowers102-32-dev",
-             # "flowers-32-dev",        # error, amount of samples
-             "food101-32-dev",
-             "gtsrb-32-dev",
-             "gtsrbcrop-32-dev",
-             "mnist-32-dev",
-             "stl10-32-dev",
-             "caltech256-32-dev",
-             # "textures_32.h5",        # error on submit
-             # "indoor67_32.h5",
-             # "places_32.h5",
-             "svhn-32-dev",
-             "quickdraw-28-dev"]
-
-    dsets=["cifar10"]
+    dsets = ["front45_models",
+             "sota_models_cifar100-32-dev",
+             "sota_models_cifar10-32-dev",
+             "sota_models_fashion-mnist-32-dev",
+             "sota_models_flowers102-32-dev",
+             "sota_models_food101-32-dev",
+             "sota_models_gtsrb-32-dev",
+             "sota_models_gtsrbcrop-32-dev",
+             "sota_models_mnist-32-dev",
+             "sota_models_stl10-32-dev",
+             "sota_models_caltech256-32-dev",
+             "sota_models_svhn-32-dev",
+             "sota_models_quickdraw-28-dev"]
 
     for id, d in enumerate(dsets):
         Classifier_Path = Dataset_Path + d + '/'
-        models = [f for f in os.listdir(Classifier_Path) if ".pkl" in f]
+        models = [f for f in os.listdir(Classifier_Path)]
+        print(models)
 
         # Creating system
         sys = sb.SystemBuilder(verbose=False)
@@ -113,10 +114,18 @@ if __name__ == "__main__":
 
             print("Evaluation time:", eval_time)
 
-            records[m_] = results.test
+            records[m_] = results
             # print(results.test)
 
+        import Source.io_util as io
+        if not os.path.exists('./models_evaluation/%s'%d):
+            os.makedirs('./models_evaluation/%s'%d)
+        io.save_pickle('./models_evaluation/%s/models.pkl'%d, records)
+
         import Examples.paretto_front as pareto
-        front = pareto.get_front_params_accuracy(records)
-        plot_accuracy_parameters(front)
+        front = pareto.get_front_time_accuracy(records, phase="test")
+
+        plot_accuracy_time(front)
+        plt.legend()
+        plt.show()
 
