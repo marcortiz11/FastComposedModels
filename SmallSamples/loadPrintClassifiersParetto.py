@@ -75,18 +75,17 @@ if __name__ == "__main__":
     import os
     Dataset_Path = "../Definitions/Classifiers/"
     dsets = ["front45_models",
-             "sota_models_cifar100-32-dev",
-             "sota_models_cifar10-32-dev",
-             "sota_models_fashion-mnist-32-dev",
-             "sota_models_flowers102-32-dev",
-             "sota_models_food101-32-dev",
-             "sota_models_gtsrb-32-dev",
-             "sota_models_gtsrbcrop-32-dev",
-             "sota_models_mnist-32-dev",
-             "sota_models_stl10-32-dev",
-             "sota_models_caltech256-32-dev",
-             "sota_models_svhn-32-dev",
-             "sota_models_quickdraw-28-dev"]
+             "sota_models_cifar100-32-dev_validation",
+             "sota_models_cifar10-32-dev_validation",
+             "sota_models_fashion-mnist-32-dev_validation",
+             "sota_models_flowers102-32-dev_validation",
+             "sota_models_gtsrb-32-dev_validation",
+             "sota_models_gtsrbcrop-32-dev_validation",
+             "sota_models_mnist-32-dev_validation",
+             "sota_models_stl10-32-dev_validation",
+             "sota_models_caltech256-32-dev_validation",
+             "sota_models_svhn-32-dev_validation",
+             "sota_models_quickdraw-28-dev_validation"]
 
     for id, d in enumerate(dsets):
         Classifier_Path = Dataset_Path + d + '/'

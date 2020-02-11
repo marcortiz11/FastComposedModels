@@ -20,7 +20,7 @@ def metadata_template(id, dataset, results_loc, comments=""):
     meta_data = {
         "id": id,
         "dataset": dataset,
-        "results": os.path.join(results_loc, id),
+        "results": results_loc,
         "comments": comments,
         "params": {}  # Specific to every ensemble type or ensemble experiment. Filled later
     }
@@ -39,11 +39,11 @@ def save_results(meta_file, meta_data_results, params, R):
     :return:
     """
 
-    assert os.path.isabs(meta_file), "ERROR Metadata Results: File meta_file not found"
+    assert os.path.isabs(meta_file), "ERROR Metadata Results: File meta_file should be an absolute path to the file"
     assert meta_data_results['results'] != "" and meta_data_results['results'] is not None
 
     if not os.path.exists(meta_file):
-        with open(meta_file, 'rw') as file:
+        with open(meta_file, 'w') as file:
             json.dump([], file)  # Emtpy list of results
 
     save_path = meta_data_results['results']
@@ -51,14 +51,16 @@ def save_results(meta_file, meta_data_results, params, R):
         os.makedirs(save_path)
 
     # 1- Guardar R
-    io.save_pickle(os.path.join(save_path, "R.pkl"), R)
+    io.save_pickle(os.path.join(save_path, "ensembles.pkl"), R)
 
     # 2- Obre el meta_data file i fer update
     meta_data_results['params'] = params
-    with open(meta_file, 'rw') as file:
+    with open(meta_file, 'r') as file:
         meta_data = json.load(file)
+
+    with open(meta_file, 'w') as file:
         meta_data.append(meta_data_results)
-        json.dump(meta_data, file)
+        json.dump(meta_data, file, indent=4)
 
 
 
