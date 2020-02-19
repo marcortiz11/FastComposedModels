@@ -41,7 +41,7 @@ def __make_data_and_dataset(i, c_id, c_file, th):
 
 
 #   ---- VERSION 1: Find the best chain ----    #
-def extend_chain_pt(i, c_id, th=None, c_file = None):
+def extend_chain_pt(i, c_id, th=None, c_file = None, trigger_name=None):
 
     """
     Extends the chain with a probability trigger and a classifier
@@ -61,7 +61,8 @@ def extend_chain_pt(i, c_id, th=None, c_file = None):
         last_id = i.get_message().classifier[-1].id  # Last classifier added to the chain
 
         # Create dataset for new trigger if trigger's classifier not existing
-        trigger_name = "trigger_classifier_" + str(th) + "_" + last_id
+        if trigger_name is None:
+            trigger_name = "trigger_classifier_" + str(th) + "_" + last_id
         trigger_classifier_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'tmp',
                                                trigger_name+'.pkl')
 
@@ -82,7 +83,7 @@ def extend_chain_pt(i, c_id, th=None, c_file = None):
         i.get(last_id).component_id = trigger_name
 
 
-def replace_classifier(i, c_id, c_id_new, c_file = None):
+def replace_classifier(i, c_id, c_id_new, c_file = None, trigger_name=None):
 
     """
     Replaces a classifier in the chain for a new classifier
@@ -109,7 +110,8 @@ def replace_classifier(i, c_id, c_id_new, c_file = None):
             old_data_id = trigger_classifier_old.data_id
             th = float(trigger_id.split("_")[2])
 
-            trigger_name = "trigger_classifier_" + str(th) + "_" + c_id
+            if trigger_name is None:
+                trigger_name = "trigger_classifier_" + str(th) + "_" + c_id_new
             trigger_classifier_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'tmp',
                                                    trigger_name+'.pkl')
 
@@ -143,7 +145,7 @@ def replace_classifier(i, c_id, c_id_new, c_file = None):
                     trigger.component_ids[ic] = c_id_new
 
 
-def update_threshold(i, c_id, step):
+def update_threshold(i, c_id, step, trigger_name=None):
     """
     Updates the threshold of a classifier by adding step (+ or -)
     :param i: Ensemble of models (system) representing an individual
@@ -162,7 +164,8 @@ def update_threshold(i, c_id, step):
         th = float(trigger_id.split("_")[2])
         new_th = th+step
 
-        trigger_name = "trigger_classifier_" + str(new_th) + "_" + c_id
+        if trigger_name is None:
+            trigger_name = "trigger_classifier_" + str(new_th) + "_" + c_id
         trigger_classifier_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'tmp',
                                                trigger_name+'.pkl')
 

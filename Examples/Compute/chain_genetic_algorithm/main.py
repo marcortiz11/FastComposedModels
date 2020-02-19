@@ -13,6 +13,7 @@ import random
 import os
 import json
 import time
+import numpy as np
 
 global args
 
@@ -30,7 +31,8 @@ def argument_parse(argv):
     parser.add_argument("--param_constraint", default=100000, type=float, help="Param constraint of the ensemble")
     parser.add_argument("--acc_constraint", default=0.8, type=float, help="Accuracy constraint")
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
-    parser.add_argument("--print", type=str, help="Folder in which to save the results of the execution")
+    parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
+    parser.add_argument("--parallel", type=int, help="Parallel evaluation of the ensembles")
     parser.add_argument("--a", default=100, type=float)
     parser.add_argument("--b", default=1, type=float)
 
@@ -46,7 +48,7 @@ def __get_val_accuracy(c_file):
     c = make.make_classifier("asdf",c_file)
     s.add_classifier(c)
     s.set_start("asdf")
-    return ev.evaluate(s,s.get_start(),phases=["val"]).val['system'].accuracy
+    return ev.evaluate(s, s.get_start(), phases=["val"]).val['system'].accuracy
 
 
 def generate_initial_population():
@@ -54,12 +56,12 @@ def generate_initial_population():
     P = []
     classifier_files = [os.path.join(classifier_path, f) for f in os.listdir(classifier_path) if ".pkl" in f]
     for c_file in classifier_files:
-        sys_id = str(random.random())
-        sys = sb.SystemBuilder(verbose=False, id=sys_id)
+        sys = sb.SystemBuilder(verbose=False)
         c_id = __get_classifier_name(c_file)
         classifier = make.make_classifier(c_id, c_file)
         sys.add_classifier(classifier)
         sys.set_start(c_id)
+        sys.set_sysid(utils.generate_system_id_chain(sys))
         P.append(sys)
     return P
 
@@ -73,7 +75,7 @@ def mutation_operation(P, fit_vals):
     r = random.random()
     if args.pm > 0 and len(p.get_message().classifier) < 4:
         new_p = p.copy()
-        new_p.set_sysid(str(random.random()))
+        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         c_file = utils.pick_random_classifier(args)
         c_id = __get_classifier_name(c_file)
         om.extend_chain_pt(new_p, c_id, utils.pick_random_threshold(args), c_file=c_file)
@@ -83,7 +85,7 @@ def mutation_operation(P, fit_vals):
     r = random.random()
     if args.pm > 0:
         new_p = p.copy()
-        new_p.set_sysid(str(random.random()))
+        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         c_file_new = utils.pick_random_classifier(args)
         c_id_new = __get_classifier_name(c_file_new)
         om.replace_classifier(new_p, utils.pick_random_classifier(args, new_p), c_id_new, c_file=c_file_new)
@@ -93,7 +95,7 @@ def mutation_operation(P, fit_vals):
     r = random.random()
     if args.pm > 0:
         new_p = p.copy()
-        new_p.set_sysid(str(random.random()))
+        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         sign = 2*(random.random() > 0.5) - 1
         om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th,)
         offspring.append(new_p)
@@ -117,6 +119,9 @@ def crossover_operation(P, fit_vals):
         pointB = classifiersB[random_number].id
         offspring = ob.singlepoint_crossover(P[ai], P[bi], pointA, pointB)
 
+        for o in offspring:
+            o.set_sysid(utils.generate_system_id_chain(o))  # Crea un nou id per cada fill
+
     return offspring
 
 
@@ -138,20 +143,20 @@ def evaluate_process(P, pi, R, cores):
         i += cores
 
 
-def evaluate_population(P, parallel=False, cores=1):
+def evaluate_population(P):
     """
     :param P: Population
     :return:
     """
     R = [ev.Results]*len(P)
-    if parallel:
+    if args.parallel:
         from multiprocessing import Process, Manager
         processes = []
         R_manager = Manager().list(R)
-        for i in range(cores):
-            processes.append(Process(target=evaluate_process, args=(P, i, R_manager, cores)))
+        for i in range(args.parallel):
+            processes.append(Process(target=evaluate_process, args=(P, i, R_manager, args.parallel)))
             processes[i].start()
-        for i in range(cores):
+        for i in range(args.parallel):
             processes[i].join()
         return list(R_manager)
     else:
@@ -191,7 +196,7 @@ if __name__ == "__main__":
         fit_offspring = fit_fun.f1_time_penalization_preevaluated(R_offspring, a=args.a, b=args.b)
         # Selection
         fit_generation = fit + fit_offspring
-        P_generation = P+P_offspring
+        P_generation = P + P_offspring
         R_generation = R + R_offspring
         selected = selection.roulette_selection(fit_generation, args.population)
         P = [P_generation[i] for i in selected]
@@ -200,40 +205,41 @@ if __name__ == "__main__":
 
         # Average fitting
         best_fit.append(sum(fit)/len(fit))
-        print("FIT: Iteration %d, average fit:%f" % (iteration, best_fit[-1]))
+        print("Iteration %d" % iteration)
+        print("\tAVG fit:%f" % (best_fit[-1]))
+        print("\tMost fit individual: %s" % P[np.argmax(fit)].get_sysid())
 
         # Plotting population
         R_dict_old.update(R_dict)
         R_dict.clear()
         for i, p in enumerate(P):
             R_dict[p.get_sysid()] = R[i]
-        # utils.plot_population(R_dict, R_dict_old, R_dict_models, iteration, args.time_constraint)
+        if args.plot:
+            utils.plot_population(R_dict, R_dict_models, iteration)
 
         iteration += 1
         print("TIME: Seconds per generation: %f " % (time.time()-start))
 
-    # Save the results of the execution
-    meta_data_file = os.path.join('./results', args.dataset, 'metadata.json')
-    arguments_dict = args.__dict__
-    meta_data_dict = {}
 
-    if not os.path.exists(meta_data_file):
-        with open(meta_data_file, 'w') as file:
-            json.dump(meta_data_dict, file)
+    # Save the results
+    import Examples.metadata_manager_results as manager_results
+    meta_data_file = os.path.join(os.environ['FCM'],
+                                  'Examples',
+                                  'Compute',
+                                  'chain_genetic_algorithm',
+                                  'results',
+                                  'metadata.json')
 
-    with open(meta_data_file) as file:
-        meta_data_dict = json.load(file)
+    id = str(random.randint(0, 1e8))
+    results_loc = os.path.join('./results', args.dataset, id)
+    comments = ""
+    meta_data_result = manager_results.metadata_template(id, args.dataset, results_loc, comments)
 
-    # Save results
-    pid = str(os.getpid())
-    res_dir = os.path.join('./results', args.dataset, pid)
-    os.makedirs(res_dir)
+    # Obtenir el diccionari de params
+    params = args.__dict__
+
+    # Guardar els resultats en la carpeta del dataset
     R_dict_old.update(R_dict)
-    io.save_pickle(os.path.join(res_dir, 'R'), R_dict_old)
-
-    # Update meta_data file
-    meta_data_dict[pid] = arguments_dict
-    with open(meta_data_file, 'w') as file:
-        json.dump(meta_data_dict, file, indent=4)
+    manager_results.save_results(meta_data_file, meta_data_result, params, R_dict_old)
 
 

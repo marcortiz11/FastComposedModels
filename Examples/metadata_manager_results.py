@@ -2,6 +2,7 @@ import random
 import os
 import json
 import Source.io_util as io
+from datetime import date
 
 
 def metadata_template(id, dataset, results_loc, comments=""):
@@ -17,8 +18,10 @@ def metadata_template(id, dataset, results_loc, comments=""):
 
     assert id != "", "Id of the computed ensembles cannot be empty"
 
+    today = date.today()
     meta_data = {
         "id": id,
+        "date": today.strftime("%d/%m/%Y"),
         "dataset": dataset,
         "results": results_loc,
         "comments": comments,
@@ -44,7 +47,7 @@ def save_results(meta_file, meta_data_results, params, R):
 
     if not os.path.exists(meta_file):
         with open(meta_file, 'w') as file:
-            json.dump([], file)  # Emtpy list of results
+            json.dump([], file)
 
     save_path = meta_data_results['results']
     if not os.path.exists(save_path):
@@ -62,6 +65,14 @@ def save_results(meta_file, meta_data_results, params, R):
         meta_data.append(meta_data_results)
         json.dump(meta_data, file, indent=4)
 
+
+def get_results_by_id(meta_file, id):
+    with open(meta_file) as file:
+        meta_dataset = json.load(file)
+        for entry in meta_dataset:
+            if entry['id'] == id:
+                return os.path.join(entry['results'], 'ensembles.pkl')
+    return None
 
 
 
