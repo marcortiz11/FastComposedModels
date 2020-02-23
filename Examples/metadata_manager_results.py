@@ -75,6 +75,17 @@ def get_results_by_id(meta_file, id):
     return None
 
 
+def get_by_id(meta_file, id, *fields):
+    query_result = []
+    with open(meta_file) as file:
+        meta_dataset = json.load(file)
+        for entry in meta_dataset:
+            if entry['id'] == id:
+                for field in fields:
+                    query_result.append(entry[field])
+                return query_result
+    return None
+
 
 
 

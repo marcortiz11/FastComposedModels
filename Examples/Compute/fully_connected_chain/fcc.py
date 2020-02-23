@@ -69,7 +69,6 @@ if __name__ == "__main__":
         front = paretto.get_front_time_accuracy(R_models, phase="test")
         front_sorted = paretto.sort_results_by_accuracy(front, phase="test")
 
-
         # ENSEMBLE SKELETON
         sys = sb.SystemBuilder(verbose=False)
         trigger0_train_dataset = os.path.join(data_path, "train_trigger0"+pid)
@@ -103,7 +102,7 @@ if __name__ == "__main__":
         sys.add_classifier(c1)
 
         # Classifier 0
-        records = {}
+        records = front
 
         for ic0 in range(len(models)):
             c0 = models[ic0]

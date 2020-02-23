@@ -72,8 +72,7 @@ def mutation_operation(P, fit_vals):
     p = P[selection.spin_roulette(fit_vals)]
 
     # Extend chain
-    r = random.random()
-    if args.pm > 0 and len(p.get_message().classifier) < 4:
+    if args.pm > 0 and len(p.get_message().classifier) < 3:
         new_p = p.copy()
         new_p.set_sysid(utils.generate_system_id_chain(new_p))
         c_file = utils.pick_random_classifier(args)
@@ -82,7 +81,6 @@ def mutation_operation(P, fit_vals):
         offspring.append(new_p)
 
     # Replace classifier
-    r = random.random()
     if args.pm > 0:
         new_p = p.copy()
         new_p.set_sysid(utils.generate_system_id_chain(new_p))
@@ -91,13 +89,12 @@ def mutation_operation(P, fit_vals):
         om.replace_classifier(new_p, utils.pick_random_classifier(args, new_p), c_id_new, c_file=c_file_new)
         offspring.append(new_p)
 
-    # Change threshold
-    r = random.random()
+    # Update threshold
     if args.pm > 0:
         new_p = p.copy()
         new_p.set_sysid(utils.generate_system_id_chain(new_p))
         sign = 2*(random.random() > 0.5) - 1
-        om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th,)
+        om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th)
         offspring.append(new_p)
 
     return offspring
@@ -117,10 +114,10 @@ def crossover_operation(P, fit_vals):
         random_number = random.randint(0, min(len(classifiersA)-1, len(classifiersB)-1))
         pointA = classifiersA[random_number].id
         pointB = classifiersB[random_number].id
-        offspring = ob.singlepoint_crossover(P[ai], P[bi], pointA, pointB)
 
+        offspring = ob.singlepoint_crossover(P[ai], P[bi], pointA, pointB)
         for o in offspring:
-            o.set_sysid(utils.generate_system_id_chain(o))  # Crea un nou id per cada fill
+            o.set_sysid(utils.generate_system_id_chain(o))  # Create ids for the offspring individuals
 
     return offspring
 
@@ -174,7 +171,8 @@ if __name__ == "__main__":
     best_fit = []
     R_dict = {}
     R_dict_old = {}
-    R_dict_models = io.read_pickle(os.path.join(os.environ['FCM'], 'SmallSamples', 'models_evaluation', args.dataset, 'models.pkl'))
+    R_dict_models = io.read_pickle(
+        os.path.join(os.environ['FCM'], 'SmallSamples', 'models_evaluation', args.dataset, 'models.pkl'))
 
     # Initial population
     P = generate_initial_population()
@@ -219,7 +217,6 @@ if __name__ == "__main__":
 
         iteration += 1
         print("TIME: Seconds per generation: %f " % (time.time()-start))
-
 
     # Save the results
     import Examples.metadata_manager_results as manager_results
