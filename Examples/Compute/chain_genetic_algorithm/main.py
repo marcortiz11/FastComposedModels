@@ -22,19 +22,19 @@ def argument_parse(argv):
     parser = argparse.ArgumentParser(usage="main.py [options]",
                                      description="Genetic algorithm for finding the best chain under environment constraints.")
     parser.add_argument("--dataset", default="front45_models_validation", help="Datasets to evaluate d1 d2 d3, default=*")
+    # Search space params
     parser.add_argument("--population", default=100, type=int, help="Population at each generation")
     parser.add_argument("--offspring", default=100, type=int, help="Children generated at each generation")
     parser.add_argument("--iterations", default=20, type=int, help="Number of iterations before finishing algorithm")
+    parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
     parser.add_argument("--pm", default=0.8, type=float, help="Probability of mutation")
     parser.add_argument("--pc", default=0.2, type=float, help="Probability of crossing/breeding")
-    parser.add_argument("--time_constraint", default=10, type=float, help="Time constraint of the ensemble")
-    parser.add_argument("--param_constraint", default=100000, type=float, help="Param constraint of the ensemble")
-    parser.add_argument("--acc_constraint", default=0.8, type=float, help="Accuracy constraint")
-    parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
+    # Fitting function params
+    parser.add_argument("--a", default=100, type=float)
+    # Execution parameters
     parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
     parser.add_argument("--parallel", type=int, help="Parallel evaluation of the ensembles")
-    parser.add_argument("--a", default=100, type=float)
-    parser.add_argument("--b", default=1, type=float)
+
 
     return parser.parse_args(argv)
 
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     # Initial population
     P = generate_initial_population()
     R = evaluate_population(P)
-    fit = fit_fun.f1_time_penalization_preevaluated(R, a=args.a, b=args.b)
+    fit = fit_fun.f1_time_penalization_preevaluated(R, a=args.a)
 
     # Start the loop over generations
     iteration = 0
@@ -191,7 +191,7 @@ if __name__ == "__main__":
         # Evaluate offspring
         R_offspring = evaluate_population(P_offspring)
         # Evaluate offspring individuals
-        fit_offspring = fit_fun.f1_time_penalization_preevaluated(R_offspring, a=args.a, b=args.b)
+        fit_offspring = fit_fun.f1_time_penalization_preevaluated(R_offspring, a=args.a)
         # Selection
         fit_generation = fit + fit_offspring
         P_generation = P + P_offspring
@@ -206,6 +206,8 @@ if __name__ == "__main__":
         print("Iteration %d" % iteration)
         print("\tAVG fit:%f" % (best_fit[-1]))
         print("\tMost fit individual: %s" % P[np.argmax(fit)].get_sysid())
+        for i in P:
+            print(i.get_sysid())
 
         # Plotting population
         R_dict_old.update(R_dict)
@@ -217,6 +219,8 @@ if __name__ == "__main__":
 
         iteration += 1
         print("TIME: Seconds per generation: %f " % (time.time()-start))
+
+    #io.save_pickle("./P.pkl", P)
 
     # Save the results
     import Examples.metadata_manager_results as manager_results

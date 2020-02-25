@@ -18,10 +18,10 @@ def metadata_template(id, dataset, results_loc, comments=""):
 
     assert id != "", "Id of the computed ensembles cannot be empty"
 
-    today = date.today()
+    from time import gmtime, strftime
     meta_data = {
         "id": id,
-        "date": today.strftime("%d/%m/%Y"),
+        "date": strftime("%d-%m-%Y %H:%M:%S", gmtime()),
         "dataset": dataset,
         "results": results_loc,
         "comments": comments,
@@ -67,6 +67,7 @@ def save_results(meta_file, meta_data_results, params, R):
 
 
 def get_results_by_id(meta_file, id):
+    id = str(id)
     with open(meta_file) as file:
         meta_dataset = json.load(file)
         for entry in meta_dataset:
@@ -75,8 +76,9 @@ def get_results_by_id(meta_file, id):
     return None
 
 
-def get_by_id(meta_file, id, *fields):
+def get_fieldval_by_id(meta_file, id, *fields):
     query_result = []
+    id = str(id)
     with open(meta_file) as file:
         meta_dataset = json.load(file)
         for entry in meta_dataset:
@@ -86,6 +88,15 @@ def get_by_id(meta_file, id, *fields):
                 return query_result
     return None
 
+
+def get_ids_by_fieldval(meta_file, field, val):
+    query_result = []
+    with open(meta_file) as file:
+        meta_dataset = json.load(file)
+        for entry in meta_dataset:
+            if entry[field] == val:
+                query_result.append(entry['id'])
+    return query_result
 
 
 

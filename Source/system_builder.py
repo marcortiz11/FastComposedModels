@@ -26,30 +26,14 @@ class SystemBuilder:
 			print("Data component {} added to the system".format(data.id))
 
 	def add_classifier(self, classifier, trigger_ids=None, merger_ids=None):
-		# TODO: If trigger_ids not null, update triggers and connect to classifier
 		self.__check_existence(classifier)
-
-		"""
-		if classifier.HasField('component_id'):
-			assert classifier.component_id in self.components, \
-				"Error in Classifier: " + classifier.component_id + "in classifier should exist in the system"
-		"""
-
 		self.system.classifier.extend([classifier])
 		self.components[classifier.id] = self.system.classifier[-1]
 		if self.verbose:
 			print("Classifier component {} added to the system".format(classifier.id))
 
 	def add_trigger(self, trigger, trigger_ids=None):
-		# TODO: If trigger_ids not null, update triggers and connect to classifier
 		self.__check_existence(trigger)
-
-		"""
-		for id in trigger.component_ids:
-			assert id in self.components, \
-				"ERROR in Trigger: component with id " + id + " not in the system"
-		"""
-
 		self.system.trigger.extend([trigger])
 		self.components[trigger.id] = self.system.trigger[-1]
 		if self.verbose:
@@ -95,7 +79,6 @@ class SystemBuilder:
 
 	# Updates an existing component
 	def replace(self, id, new_component):
-		# TODO: Update connections to triggers!!!
 		if self.verbose:
 			print("Replacing component {} by {}".format(id, new_component.id))
 		self.remove(id)

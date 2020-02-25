@@ -44,7 +44,7 @@ def make_classifier_raw_data(L, gt, ids):
     return raw_data
 
 
-def make_classifier_dict(name, data_id, train_data, test_data, performance, val_data=None):
+def make_classifier_dict(name, data_id, train_data, test_data, performance, val_data=None, params=None):
 
     classifier = {
         'name': name,
@@ -53,6 +53,7 @@ def make_classifier_dict(name, data_id, train_data, test_data, performance, val_
         'test': test_data,
         'val': val_data,
         'metrics': performance,
+        'optional_params': params,
     }
 
     return classifier

@@ -28,7 +28,7 @@ def f1_time_penalization(P, a=100, b=1, time_constraint = None):
 
 
 
-def f1_time_penalization_preevaluated(P_r, a=100, b=1):
+def f1_time_penalization_preevaluated(P_r, a=100):
     """
     F(acc, time) = a*acc + b*(t/tr)
     :param P_r: List of evaluation results for each individual in the population
@@ -41,11 +41,11 @@ def f1_time_penalization_preevaluated(P_r, a=100, b=1):
     for i_ind, i in enumerate(P_r):
         acc = i.val['system'].accuracy
         time_inference = i.val['system'].time
-        fit[i_ind] = pow(a*acc - b*time_inference, 3)
+        fit[i_ind] = pow(a*acc - time_inference, 3)
     return fit
 
 
-def f2_time_penalization_preevaluated(P_r, a=100, b=1):
+def f2_time_penalization_preevaluated(P_r, a=100):
     """
     F(acc, time) = a*acc + b*(t/tr)
     :param a: Weights accuracy

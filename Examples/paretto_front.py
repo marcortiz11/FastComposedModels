@@ -176,7 +176,6 @@ def get_increment_front(f0, f1, t, phase=None):
     return increment
 
 
-
 if __name__ == "__main__":
     R = io.read_pickle("./Results/R_2_3_part0")
     front_params = get_front_params_accuracy(R)

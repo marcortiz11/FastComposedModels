@@ -1,17 +1,18 @@
 import Examples.metadata_manager_results as results_manager
 import Examples.plot as myplt
+import Examples.paretto_front as front
 import Source.io_util as io
 import os
 
 if __name__ == "__main__":
 
     # Information about the experiment
-    dataset = 'sota_models_stl10-32-dev_validation'
+    dataset = 'sota_models_caltech256-32-dev_validation'
     experiment = 'chain_genetic_algorithm'
-    # experiment = 'fully_connected_chain'
+    experiment = 'fully_connected_chain'
     experiment_dir = os.path.join(os.environ['FCM'], 'Examples', 'Compute', experiment)
     meta_data_file = os.path.join(experiment_dir, 'results', 'metadata.json')
-    id = "78962344"
+    id = "61423111"
 
     # Retrieve the results of the experiments
     models_data_path = os.path.join(os.environ['FCM'], 'SmallSamples', 'models_evaluation', dataset, 'models.pkl')
@@ -23,3 +24,4 @@ if __name__ == "__main__":
     myplt.plot_accuracy_time_old(chain)
     myplt.plot_accuracy_time_old(models)
     myplt.show()
+

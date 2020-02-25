@@ -63,7 +63,7 @@ if __name__ == "__main__":
             sys = sb.SystemBuilder(verbose=False)
             c = make.make_classifier("classifier", model)
             sys.add_classifier(c)
-            R_models[model] = eval.evaluate(sys, c.id, phases=["test"])
+            R_models[model] = eval.evaluate(sys, c.id, phases=["test", "val"])
 
         io.save_pickle(os.path.join(out_dir, "models"), R_models)
         front = paretto.get_front_time_accuracy(R_models, phase="test")
@@ -103,6 +103,7 @@ if __name__ == "__main__":
 
         # Classifier 0
         records = front
+        models = [k for k,v in paretto.sort_results_by_accuracy(R_models, phase="val")]
 
         for ic0 in range(len(models)):
             c0 = models[ic0]

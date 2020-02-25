@@ -50,7 +50,7 @@ if __name__ == "__main__":
     P_offspring = main.generate_offspring(P, fit)
     # 3- Evaluate offspring (Fitness)
     R_offspring = main.evaluate_population(P_offspring)
-    fit_offspring = fit_fun.f1_time_penalization_preevaluated(R_offspring, a=args.a, b=args.b)
+    fit_offspring = fit_fun.f1_time_penalization_preevaluated(R_offspring, a=args.a)
 
     execution_time = time.time() - start
 
