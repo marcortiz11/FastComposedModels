@@ -40,7 +40,7 @@ message PerformanceMetrics
 
 message Classifier {
 	required string id = 1;
-    required string classifier_file = 2;
+    optional string classifier_file = 2;
     optional string component_id = 3;
     optional string data_id = 4;
 }

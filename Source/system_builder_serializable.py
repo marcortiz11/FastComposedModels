@@ -6,80 +6,85 @@ import warnings
 class SystemBuilder:
 
 	def __check_existence(self, c):
-		if c.id in self.components:
-			print(self.system)
-		assert c.id not in self.components, "Two components with the same id: " + c.id
+		exists = self.get(c.id) is not None
+		if exists:
+			print(self.get_sysid())
+			print(self.get_message())
+		assert not exists, "Two components with the same id: " + c.id
 
-	def __load_system_from_string(self, proto_string):
-		self.system.ParseFromString(proto_string)
-		return None
+	def __deserialize(self):
+		system = fcm.System()
+		system.ParseFromString(self.system_serialized)
+		return system
 
-	def __init__(self, verbose=True, id="", proto_string=None):
-		self.components = {}
-		self.system = fcm.System()
+	def __serialize(self, system):
+		self.system_serialized = system.SerializeToString()
+
+	def __init__(self, verbose=True, id=""):
+		self.system_serialized = fcm.System().SerializeToString()
 		self.verbose = verbose
 		self.metrics = {}
 		self.start = ""  # Indicates the beginning of the graph/ensemble
 		self.id = id
-		if proto_string is not None:
-			self.__load_system_from_string(proto_string)
 
 	def add_data(self, data):
 		self.__check_existence(data)
-		#system = fcm.System.Parsef
-		self.system.data.extend([data])
-		self.components[data.id] = self.system.data[-1]
+		system = self.__deserialize()
+		system.data.extend([data])
+		self.__serialize(system)
 		if self.verbose:
 			print("Data component {} added to the system".format(data.id))
 
-	def add_classifier(self, classifier, trigger_ids=None, merger_ids=None):
+	def add_classifier(self, classifier):
 		self.__check_existence(classifier)
-		self.system.classifier.extend([classifier])
-		self.components[classifier.id] = self.system.classifier[-1]
+		system = self.__deserialize()
+		system.classifier.extend([classifier])
+		self.__serialize(system)
 		if self.verbose:
 			print("Classifier component {} added to the system".format(classifier.id))
 
 	def add_trigger(self, trigger, trigger_ids=None):
 		self.__check_existence(trigger)
-		self.system.trigger.extend([trigger])
-		self.components[trigger.id] = self.system.trigger[-1]
+		system = self.__deserialize()
+		system.trigger.extend([trigger])
+		self.__serialize(system)
 		if self.verbose:
 			print("Trigger component {} added to the system".format(trigger.id))
 
 	def add_merger(self, merger):
 		self.__check_existence(merger)
 		assert len(merger.component_ids) > 1, \
-			"ERROR in Merger" + id + ": Merger should have at least two classifiers"
+			"ERROR in Merger" + merger.id + ": Merger should have at least two classifiers"
 		for id in merger.component_ids:
-			assert id in self.components, \
+			assert self.get(id) is not None, \
 				"ERROR in Merger: component with id " + id + " not in the system"
-			assert self.components[id].DESCRIPTOR.name == "Classifier", \
+			assert self.get(id).DESCRIPTOR.name == "Classifier", \
 				"ERROR in Merger: Merger should merge only classifiers"
-		self.system.merger.extend([merger])
-		self.components[merger.id] = self.system.merger[-1]
+		system = self.__deserialize()
+		system.merger.extend([merger])
+		self.__serialize(system)
 		if self.verbose:
 			print("Trigger component {} added to the system".format(merger.id))
 
 	# Removes a component from the system
 	def remove(self, id):
-		# TODO: Remove connections to triggers in the system
-		if id not in self.components:
-			return
-		type_component = self.components[id].DESCRIPTOR.name
-		del self.components[id]
+		if self.get(id) is None: return
 
+		type_component = self.get(id).DESCRIPTOR.name
+		system = self.__deserialize()
 		if type_component == "Trigger":
-			for i, c in enumerate(self.system.trigger):
-				if c.id == id: del self.system.trigger[i]
+			for i, c in enumerate(system.trigger):
+				if c.id == id: del system.trigger[i]
 		elif type_component == "Classifier":
-			for i, c in enumerate(self.system.classifier):
-				if c.id == id: del self.system.classifier[i]
+			for i, c in enumerate(system.classifier):
+				if c.id == id: del system.classifier[i]
 		elif type_component == "Merger":
-			for i, c in enumerate(self.system.merger):
-				if c.id == id: del self.system.merger[i]
+			for i, c in enumerate(system.merger):
+				if c.id == id: del system.merger[i]
 		elif type_component == "Data":
-			for i, c in enumerate(self.system.data):
-				if c.id == id: del self.system.data[i]
+			for i, c in enumerate(system.data):
+				if c.id == id: del system.data[i]
+		self.__serialize(system)
 
 		if self.verbose:
 			print("Component {} removed from the system".format(id))
@@ -99,7 +104,7 @@ class SystemBuilder:
 			self.add_data(new_component)
 		else:
 			raise Exception("Component Type not recognized")
-		self.components[new_component.id].CopyFrom(new_component)
+		# self.components[new_component.id].CopyFrom(new_component)
 
 	def build_classifier_dict(self, name, start_id, phases=["test"]):
 		import Source.system_evaluator as eval
@@ -110,25 +115,14 @@ class SystemBuilder:
 	# Creates a copy of the ensemble system
 	def copy(self):
 		new_sys = SystemBuilder()
-		new_sys.system = copy.deepcopy(self.system)
-		new_sys.verbose = self.verbose
-		new_sys.start = self.start
-		new_sys.components = {}
-		for data in new_sys.system.data:
-			new_sys.components[data.id] = data
-		for trigger in new_sys.system.trigger:
-			new_sys.components[trigger.id] = trigger
-		for classifier in new_sys.system.classifier:
-			new_sys.components[classifier.id] = classifier
-		for merger in new_sys.system.merger:
-			new_sys.components[merger.id] = merger
+		new_sys.system_serialized = copy.copy(self.system_serialized)
+		new_sys.verbose = copy.copy(self.verbose)
+		new_sys.start = copy.copy(self.start)
 		return new_sys
 
 	# ------------- GETTERS AND SETTERS --------------------#
 	# Sets the start of the graph for evaluation
 	def set_start(self, id):
-		if id not in self.components:
-			warnings.warn("WARNING: %s not in the system" % id)
 		self.start = id
 
 	# Sets system id
@@ -137,9 +131,13 @@ class SystemBuilder:
 
 	# Returns the component in protobuf message
 	def get(self, id):
-		if id not in self.components:
-			print(self.system)
-		return self.components[id]
+		system = self.__deserialize()
+		for descriptor_field in system.DESCRIPTOR.fields:
+			components = getattr(system, descriptor_field.name)
+			for component in components:
+				if component.id == id:
+					return component
+		return None
 
 	# Get start component for evaluation
 	def get_start(self):
@@ -147,7 +145,8 @@ class SystemBuilder:
 
 	# Get the protobuf definition (graph) of the ensemble system
 	def get_message(self):
-		return self.system
+		system = self.__deserialize()
+		return system
 
 	# Get system's id
 	def get_sysid(self):

@@ -18,9 +18,9 @@ _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='FastComposedModels.proto',
   package='',
-  syntax='proto2',
-  serialized_pb=_b('\n\x18\x46\x61stComposedModels.proto\"\xf5\x01\n\x04\x44\x61ta\x12\n\n\x02id\x18\x01 \x02(\t\x12\x11\n\tnum_train\x18\x02 \x02(\x05\x12\x10\n\x08num_test\x18\x03 \x02(\x05\x12\x12\n\nlabel_name\x18\x04 \x03(\t\x12\x1c\n\x06source\x18\x05 \x01(\x0b\x32\x0c.Data.Source\x1a\x89\x01\n\x06Source\x12\x12\n\ntrain_path\x18\x01 \x02(\t\x12\x11\n\ttest_path\x18\x02 \x02(\t\x12\x10\n\x08val_path\x18\x04 \x02(\t\x12!\n\x06\x66ormat\x18\x03 \x02(\x0e\x32\x11.Data.Source.Type\"#\n\x04Type\x12\x06\n\x02H5\x10\x00\x12\x08\n\x04LMDB\x10\x01\x12\t\n\x05NUMPY\x10\x02\"\x19\n\x05Logit\x12\x10\n\x04\x64\x61ta\x18\x01 \x03(\x02\x42\x02\x10\x01\"K\n\x11\x43lassifierRawData\x12\x16\n\x06logits\x18\x01 \x03(\x0b\x32\x06.Logit\x12\x0e\n\x02gt\x18\x02 \x03(\x05\x42\x02\x10\x01\x12\x0e\n\x02id\x18\x03 \x03(\x05\x42\x02\x10\x01\"B\n\x12PerformanceMetrics\x12\x0f\n\x04time\x18\x01 \x01(\x01:\x01\x30\x12\x0e\n\x06params\x18\x02 \x01(\x03\x12\x0b\n\x03ops\x18\x03 \x01(\x03\"X\n\nClassifier\x12\n\n\x02id\x18\x01 \x02(\t\x12\x17\n\x0f\x63lassifier_file\x18\x02 \x02(\t\x12\x14\n\x0c\x63omponent_id\x18\x03 \x01(\t\x12\x0f\n\x07\x64\x61ta_id\x18\x04 \x01(\t\"\x8f\x03\n\x06Merger\x12\n\n\x02id\x18\x01 \x02(\t\x12.\n\nmerge_type\x18\x02 \x02(\x0e\x32\x11.Merger.MergeType:\x07\x41VERAGE\x12\x15\n\rcomponent_ids\x18\x03 \x03(\t\"\xb1\x02\n\tMergeType\x12\x0b\n\x07\x41VERAGE\x10\x00\x12\x07\n\x03MAX\x10\x01\x12\n\n\x06VOTING\x10\x02\x12*\n&ADABOOST_LABEL_WEIGHTS_LOGIT_INFERENCE\x10\x03\x12*\n&ADABOOST_LABEL_WEIGHTS_LABEL_INFERENCE\x10\x04\x12*\n&ADABOOST_LOGIT_WEIGHTS_LABEL_INFERENCE\x10\x05\x12*\n&ADABOOST_LOGIT_WEIGHTS_LOGIT_INFERENCE\x10\x06\x12(\n$ADABOOST_LOGIT_WEIGHTS_MAX_INFERENCE\x10\x07\x12(\n$ADABOOST_LABEL_WEIGHTS_MAX_INFERENCE\x10\x08\"\\\n\x07Trigger\x12\n\n\x02id\x18\x01 \x02(\t\x12\x1f\n\nclassifier\x18\x02 \x01(\x0b\x32\x0b.Classifier\x12\r\n\x05model\x18\x03 \x01(\t\x12\x15\n\rcomponent_ids\x18\x04 \x03(\t\"r\n\x06System\x12\x13\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x05.Data\x12\x19\n\x07trigger\x18\x02 \x03(\x0b\x32\x08.Trigger\x12\x1f\n\nclassifier\x18\x03 \x03(\x0b\x32\x0b.Classifier\x12\x17\n\x06merger\x18\x04 \x03(\x0b\x32\x07.Merger')
+  serialized_pb=_b('\n\x18\x46\x61stComposedModels.proto\"\xf5\x01\n\x04\x44\x61ta\x12\n\n\x02id\x18\x01 \x02(\t\x12\x11\n\tnum_train\x18\x02 \x02(\x05\x12\x10\n\x08num_test\x18\x03 \x02(\x05\x12\x12\n\nlabel_name\x18\x04 \x03(\t\x12\x1c\n\x06source\x18\x05 \x01(\x0b\x32\x0c.Data.Source\x1a\x89\x01\n\x06Source\x12\x12\n\ntrain_path\x18\x01 \x02(\t\x12\x11\n\ttest_path\x18\x02 \x02(\t\x12\x10\n\x08val_path\x18\x04 \x02(\t\x12!\n\x06\x66ormat\x18\x03 \x02(\x0e\x32\x11.Data.Source.Type\"#\n\x04Type\x12\x06\n\x02H5\x10\x00\x12\x08\n\x04LMDB\x10\x01\x12\t\n\x05NUMPY\x10\x02\"\x19\n\x05Logit\x12\x10\n\x04\x64\x61ta\x18\x01 \x03(\x02\x42\x02\x10\x01\"K\n\x11\x43lassifierRawData\x12\x16\n\x06logits\x18\x01 \x03(\x0b\x32\x06.Logit\x12\x0e\n\x02gt\x18\x02 \x03(\x05\x42\x02\x10\x01\x12\x0e\n\x02id\x18\x03 \x03(\x05\x42\x02\x10\x01\"B\n\x12PerformanceMetrics\x12\x0f\n\x04time\x18\x01 \x01(\x01:\x01\x30\x12\x0e\n\x06params\x18\x02 \x01(\x03\x12\x0b\n\x03ops\x18\x03 \x01(\x03\"X\n\nClassifier\x12\n\n\x02id\x18\x01 \x02(\t\x12\x17\n\x0f\x63lassifier_file\x18\x02 \x01(\t\x12\x14\n\x0c\x63omponent_id\x18\x03 \x01(\t\x12\x0f\n\x07\x64\x61ta_id\x18\x04 \x01(\t\"\x8f\x03\n\x06Merger\x12\n\n\x02id\x18\x01 \x02(\t\x12.\n\nmerge_type\x18\x02 \x02(\x0e\x32\x11.Merger.MergeType:\x07\x41VERAGE\x12\x15\n\rcomponent_ids\x18\x03 \x03(\t\"\xb1\x02\n\tMergeType\x12\x0b\n\x07\x41VERAGE\x10\x00\x12\x07\n\x03MAX\x10\x01\x12\n\n\x06VOTING\x10\x02\x12*\n&ADABOOST_LABEL_WEIGHTS_LOGIT_INFERENCE\x10\x03\x12*\n&ADABOOST_LABEL_WEIGHTS_LABEL_INFERENCE\x10\x04\x12*\n&ADABOOST_LOGIT_WEIGHTS_LABEL_INFERENCE\x10\x05\x12*\n&ADABOOST_LOGIT_WEIGHTS_LOGIT_INFERENCE\x10\x06\x12(\n$ADABOOST_LOGIT_WEIGHTS_MAX_INFERENCE\x10\x07\x12(\n$ADABOOST_LABEL_WEIGHTS_MAX_INFERENCE\x10\x08\"\\\n\x07Trigger\x12\n\n\x02id\x18\x01 \x02(\t\x12\x1f\n\nclassifier\x18\x02 \x01(\x0b\x32\x0b.Classifier\x12\r\n\x05model\x18\x03 \x01(\t\x12\x15\n\rcomponent_ids\x18\x04 \x03(\t\"r\n\x06System\x12\x13\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x05.Data\x12\x19\n\x07trigger\x18\x02 \x03(\x0b\x32\x08.Trigger\x12\x1f\n\nclassifier\x18\x03 \x03(\x0b\x32\x0b.Classifier\x12\x17\n\x06merger\x18\x04 \x03(\x0b\x32\x07.Merger')
 )
+_sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
 
@@ -114,28 +114,28 @@ _DATA_SOURCE = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='test_path', full_name='Data.Source.test_path', index=1,
       number=2, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='val_path', full_name='Data.Source.val_path', index=2,
       number=4, type=9, cpp_type=9, label=2,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='format', full_name='Data.Source.format', index=3,
       number=3, type=14, cpp_type=8, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
   ],
   extensions=[
   ],
@@ -145,7 +145,6 @@ _DATA_SOURCE = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -166,35 +165,35 @@ _DATA = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='num_train', full_name='Data.num_train', index=1,
       number=2, type=5, cpp_type=1, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='num_test', full_name='Data.num_test', index=2,
       number=3, type=5, cpp_type=1, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='label_name', full_name='Data.label_name', index=3,
       number=4, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='source', full_name='Data.source', index=4,
       number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
   ],
   extensions=[
   ],
@@ -203,7 +202,6 @@ _DATA = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -225,7 +223,7 @@ _LOGIT = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))),
   ],
   extensions=[
   ],
@@ -234,7 +232,6 @@ _LOGIT = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -256,21 +253,21 @@ _CLASSIFIERRAWDATA = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='gt', full_name='ClassifierRawData.gt', index=1,
       number=2, type=5, cpp_type=1, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))),
     _descriptor.FieldDescriptor(
       name='id', full_name='ClassifierRawData.id', index=2,
       number=3, type=5, cpp_type=1, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001')), file=DESCRIPTOR),
+      options=_descriptor._ParseOptions(descriptor_pb2.FieldOptions(), _b('\020\001'))),
   ],
   extensions=[
   ],
@@ -279,7 +276,6 @@ _CLASSIFIERRAWDATA = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -298,24 +294,24 @@ _PERFORMANCEMETRICS = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='time', full_name='PerformanceMetrics.time', index=0,
       number=1, type=1, cpp_type=5, label=1,
-      has_default_value=True, default_value=float(0),
+      has_default_value=True, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='params', full_name='PerformanceMetrics.params', index=1,
       number=2, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='ops', full_name='PerformanceMetrics.ops', index=2,
       number=3, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
   ],
   extensions=[
   ],
@@ -324,7 +320,6 @@ _PERFORMANCEMETRICS = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -346,28 +341,28 @@ _CLASSIFIER = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='classifier_file', full_name='Classifier.classifier_file', index=1,
-      number=2, type=9, cpp_type=9, label=2,
+      number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='component_id', full_name='Classifier.component_id', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='data_id', full_name='Classifier.data_id', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
   ],
   extensions=[
   ],
@@ -376,7 +371,6 @@ _CLASSIFIER = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -398,21 +392,21 @@ _MERGER = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='merge_type', full_name='Merger.merge_type', index=1,
       number=2, type=14, cpp_type=8, label=2,
       has_default_value=True, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='component_ids', full_name='Merger.component_ids', index=2,
       number=3, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
   ],
   extensions=[
   ],
@@ -422,7 +416,6 @@ _MERGER = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -444,28 +437,28 @@ _TRIGGER = _descriptor.Descriptor(
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='classifier', full_name='Trigger.classifier', index=1,
       number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='model', full_name='Trigger.model', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='component_ids', full_name='Trigger.component_ids', index=3,
       number=4, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
   ],
   extensions=[
   ],
@@ -474,7 +467,6 @@ _TRIGGER = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -496,28 +488,28 @@ _SYSTEM = _descriptor.Descriptor(
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='trigger', full_name='System.trigger', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='classifier', full_name='System.classifier', index=2,
       number=3, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
     _descriptor.FieldDescriptor(
       name='merger', full_name='System.merger', index=3,
       number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
+      options=None),
   ],
   extensions=[
   ],
@@ -526,7 +518,6 @@ _SYSTEM = _descriptor.Descriptor(
   ],
   options=None,
   is_extendable=False,
-  syntax='proto2',
   extension_ranges=[],
   oneofs=[
   ],
@@ -554,7 +545,6 @@ DESCRIPTOR.message_types_by_name['Classifier'] = _CLASSIFIER
 DESCRIPTOR.message_types_by_name['Merger'] = _MERGER
 DESCRIPTOR.message_types_by_name['Trigger'] = _TRIGGER
 DESCRIPTOR.message_types_by_name['System'] = _SYSTEM
-_sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Data = _reflection.GeneratedProtocolMessageType('Data', (_message.Message,), dict(
 

@@ -1,5 +1,6 @@
 import Source.io_util as io
 import Source.genetic_algorithm.fitting_functions as fit_fun
+import Source.genetic_algorithm.selection as selection
 import Examples.Compute.chain_genetic_algorithm.main as main
 import argparse, sys, os, random, json, time
 
@@ -12,7 +13,6 @@ def argument_parse(argv):
     parser.add_argument("--dataset", default="front45_models_validation", help="Datasets to evaluate d1 d2 d3, default=*")
     parser.add_argument("--population", default=100, type=int, help="Population at each generation")
     parser.add_argument("--offspring", default=100, type=int, help="Children generated at each generation")
-    parser.add_argument("--iterations", default=20, type=int, help="Number of iterations before finishing algorithm")
     parser.add_argument("--pm", default=0.8, type=float, help="Probability of mutation")
     parser.add_argument("--pc", default=0.2, type=float, help="Probability of crossing/breeding")
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
@@ -37,59 +37,76 @@ def load_initial_population_and_fitness(file):
 
 if __name__ == "__main__":
 
-    global args
-    args = argument_parse(sys.argv[1:])
-
-    start = time.time()
+    main.args = argument_parse(sys.argv[1:])
     random.seed()
     best_fit = []
 
-    # 1- Load Population
-    P, fit = load_initial_population_and_fitness(args.population_fitness)
-    # 2- Generate offspring (crossover+mutation)
-    P_offspring = main.generate_offspring(P, fit)
-    # 3- Evaluate offspring (Fitness)
-    R_offspring = main.evaluate_population(P_offspring)
-    fit_offspring = fit_fun.f1_time_penalization_preevaluated(R_offspring, a=args.a)
+    # SELECT POPULATION FROM PARTIAL RESULTS
+    if main.args.selection == 1:
+        start = time.time()
+        P, fit = load_initial_population_and_fitness(main.args.population_fitness)
 
-    execution_time = time.time() - start
+        # 1- Load and join partial results
+        with open(main.args.meta_file, 'r') as handle:
+            partial_results = json.load(handle)
+            assert len(partial_results) > 0, "ERROR: No partial results to join"
+            for k, v in partial_results[-1].items():
+                P += io.read_pickle(v['offspring_fit_loc']+"/ensembles.pkl")['P']
+                fit += io.read_pickle(v['offspring_fit_loc']+"/ensembles.pkl")['fit']
 
-    """
-    # Selection
-    fit_generation = fit + fit_offspring
-    P_generation = P + P_offspring
-    selected = selection.roulette_selection(fit_generation, args.population)
-    P = [P_generation[i] for i in selected]
-    fit = [fit_generation[i] for i in selected]
-    """
+        # 2- Perform selection based on fit value
+        selected = selection.roulette_selection(fit, main.args.population)
+        P = [P[i] for i in selected]
+        fit = [fit[i] for i in selected]
+        execution_time = time.time() - start
 
-    # 4- Save the results
-    import Examples.metadata_manager_results as manager_results
+        # 3- Save results, Update meta_data with time required to join and add new entry to the meta_data
+        with open(main.args.meta_file, 'w') as handle:
+            partial_results[-1]["selection"] = {"exec_time": execution_time}
+            partial_results.append({})
+            json.dump(partial_results, handle, indent=4)
 
-    meta_data_file = os.path.join(os.environ['FCM'],
-                                  'Examples',
-                                  'Compute',
-                                  'chain_genetic_algorithm',
-                                  'results',
-                                  'metadata.json')
+        io.save_pickle('./initial_population.pkl', {'P': P, 'fit': fit})
 
-    id = str(random.randint(0, 1e8))
-    results_loc = os.path.join('./results', args.dataset, id)
-    comments = "PARTIAL RESULTS MULTI-NODE G.A. EXECUTION"
-    meta_data_result = manager_results.metadata_template(id, args.dataset, results_loc, comments)
-    params = args.__dict__
-    manager_results.save_results(meta_data_file, meta_data_result, params, {'P': P_offspring, 'fit': fit_offspring})
+    # PARTIAL RESULT:
+    else:
+        start = time.time()
+        # 1- Load Population
+        P, fit = load_initial_population_and_fitness(main.args.population_fitness)
+        # 2- Generate offspring (crossover+mutation)
+        P_offspring = main.generate_offspring(P, fit)
+        # 3- Evaluate offspring (Fitness)
+        R_offspring = main.evaluate_population(P_offspring)
+        fit_offspring = fit_fun.f1_time_penalization_preevaluated(R_offspring, a=main.args.a)
+        execution_time = time.time() - start
 
-    with open(args.meta_file, 'r') as handle:
-        partial_results = json.load(handle)
-        if len(partial_results) == 0:
-            partial_results = [{}]
+        # 4- Save the results
+        import Examples.metadata_manager_results as manager_results
 
-    partial_results[args.iteration][args.node]["exec_time"] = execution_time
-    partial_results[args.iteration][args.node]["offspring_fit_loc"] = results_loc
+        meta_data_file = os.path.join(os.environ['FCM'],
+                                      'Examples',
+                                      'Compute',
+                                      'chain_genetic_algorithm',
+                                      'results',
+                                      'metadata.json')
 
-    with open(args.meta_file, 'w') as handle:
-        json.dump(partial_results, handle)
+        id = str(random.randint(0, 1e12))
+        results_loc = os.path.join('./results', main.args.dataset, id)
+        comments = "PARTIAL RESULTS MULTI-NODE G.A. EXECUTION"
+        meta_data_result = manager_results.metadata_template(id, main.args.dataset, results_loc, comments)
+        params = main.args.__dict__
+        manager_results.save_results(meta_data_file, meta_data_result, params, {'P': P_offspring, 'fit': fit_offspring})
+
+        # Update multinode metadata file
+        with open(main.args.meta_file, 'r') as handle:
+            partial_results = json.load(handle)
+            if len(partial_results) == 0:
+                partial_results = [{}]
+
+        partial_results[-1][main.args.node] = {"exec_time": execution_time,
+                                                                "offspring_fit_loc": results_loc}
+        with open(main.args.meta_file, 'w') as handle:
+            json.dump(partial_results, handle, indent=4)
 
 
 

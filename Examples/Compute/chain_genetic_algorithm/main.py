@@ -1,4 +1,4 @@
-import Source.system_builder as sb
+import Source.system_builder_serializable as sb
 import Source.make_util as make
 import Source.io_util as io
 import Source.system_evaluator as ev
@@ -34,7 +34,7 @@ def argument_parse(argv):
     # Execution parameters
     parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
     parser.add_argument("--parallel", type=int, help="Parallel evaluation of the ensembles")
-
+    parser.add_argument("--save_ensembles", type=int, help="Save the ensemble solutions evaluated in pickle")
 
     return parser.parse_args(argv)
 
@@ -74,27 +74,27 @@ def mutation_operation(P, fit_vals):
     # Extend chain
     if args.pm > 0 and len(p.get_message().classifier) < 3:
         new_p = p.copy()
-        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         c_file = utils.pick_random_classifier(args)
         c_id = __get_classifier_name(c_file)
         om.extend_chain_pt(new_p, c_id, utils.pick_random_threshold(args), c_file=c_file)
+        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         offspring.append(new_p)
 
     # Replace classifier
     if args.pm > 0:
         new_p = p.copy()
-        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         c_file_new = utils.pick_random_classifier(args)
         c_id_new = __get_classifier_name(c_file_new)
         om.replace_classifier(new_p, utils.pick_random_classifier(args, new_p), c_id_new, c_file=c_file_new)
+        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         offspring.append(new_p)
 
     # Update threshold
     if args.pm > 0:
         new_p = p.copy()
-        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         sign = 2*(random.random() > 0.5) - 1
         om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th)
+        new_p.set_sysid(utils.generate_system_id_chain(new_p))
         offspring.append(new_p)
 
     return offspring
@@ -166,9 +166,8 @@ if __name__ == "__main__":
 
     global args
     args = argument_parse(sys.argv[1:])
-    random.seed()  # Initialize the random generator
+    random.seed()
 
-    best_fit = []
     R_dict = {}
     R_dict_old = {}
     R_dict_models = io.read_pickle(
@@ -178,12 +177,11 @@ if __name__ == "__main__":
     P = generate_initial_population()
     R = evaluate_population(P)
     fit = fit_fun.f1_time_penalization_preevaluated(R, a=args.a)
+    P_all = []  # Save all ensembles evaluated
 
     # Start the loop over generations
     iteration = 0
-    improving = True
-
-    while iteration < args.iterations and improving:
+    while iteration < args.iterations:
         start = time.time()
 
         # Generate offspring (crossover+mutation)
@@ -201,13 +199,8 @@ if __name__ == "__main__":
         fit = [fit_generation[i] for i in selected]
         R = [R_generation[i] for i in selected]
 
-        # Average fitting
-        best_fit.append(sum(fit)/len(fit))
-        print("Iteration %d" % iteration)
-        print("\tAVG fit:%f" % (best_fit[-1]))
-        print("\tMost fit individual: %s" % P[np.argmax(fit)].get_sysid())
-        for i in P:
-            print(i.get_sysid())
+        if args.save_ensembles:
+            P_all += P
 
         # Plotting population
         R_dict_old.update(R_dict)
@@ -217,10 +210,11 @@ if __name__ == "__main__":
         if args.plot:
             utils.plot_population(R_dict, R_dict_models, iteration)
 
-        iteration += 1
+        # Info about current generation
+        print("Iteration %d" % iteration)
         print("TIME: Seconds per generation: %f " % (time.time()-start))
 
-    #io.save_pickle("./P.pkl", P)
+        iteration += 1
 
     # Save the results
     import Examples.metadata_manager_results as manager_results
@@ -231,7 +225,7 @@ if __name__ == "__main__":
                                   'results',
                                   'metadata.json')
 
-    id = str(random.randint(0, 1e8))
+    id = str(random.randint(0, 1e16))
     results_loc = os.path.join('./results', args.dataset, id)
     comments = ""
     meta_data_result = manager_results.metadata_template(id, args.dataset, results_loc, comments)
@@ -241,6 +235,6 @@ if __name__ == "__main__":
 
     # Guardar els resultats en la carpeta del dataset
     R_dict_old.update(R_dict)
-    manager_results.save_results(meta_data_file, meta_data_result, params, R_dict_old)
+    manager_results.save_results_and_ensembles(meta_data_file, meta_data_result, params, R_dict_old, P_all)
 
 
