@@ -58,7 +58,9 @@ def extend_chain_pt(i, c_id, th=None, c_file = None, trigger_name=None):
     if c_id not in existing_classifier_id:  # Add classifier if not present previously in the chain
 
         # Get the last model in the chain
-        last_id = i.get_message().classifier[-1].id  # Last classifier added to the chain
+        for c in i.get_message().classifier:
+            if c.component_id == "":
+                last_id = c.id
 
         # Create dataset for new trigger if trigger's classifier not existing
         if trigger_name is None:
@@ -69,18 +71,20 @@ def extend_chain_pt(i, c_id, th=None, c_file = None, trigger_name=None):
         if not os.path.exists(trigger_classifier_file):
             data = __make_data_and_dataset(i, last_id, i.get(last_id).classifier_file, th)
             i.add_data(data)
-            trigger = make.make_trigger(trigger_name, make.make_empty_classifier(data_id=data.id), component_ids=[c_id], model="probability")
+            trigger = make.make_trigger(trigger_name, make.make_empty_classifier(id="", data_id=data.id), component_ids=[c_id], model="probability")
         else:
             trigger = make.make_trigger(trigger_name, make.make_classifier('', trigger_classifier_file), component_ids=[c_id])
 
-        i.replace(trigger_name, trigger)
+        i.add_trigger(trigger)
 
         # Create new mutated classifier
         classifier = make.make_classifier(c_id, c_file)
         i.add_classifier(classifier)
 
         # Update last classifier to connect to trigger
-        i.get(last_id).component_id = trigger_name
+        last_classifier = i.get(last_id)
+        last_classifier.component_id = trigger_name
+        i.replace(last_id, last_classifier)
 
 
 def replace_classifier(i, c_id, c_id_new, c_file = None, trigger_name=None):
@@ -118,7 +122,7 @@ def replace_classifier(i, c_id, c_id_new, c_file = None, trigger_name=None):
             if not os.path.exists(trigger_classifier_file):
                 data = __make_data_and_dataset(i, c_id_new, c_file, th)
                 i.replace(old_data_id, data)
-                trigger = make.make_trigger(trigger_name, make.make_empty_classifier(data_id=data.id),
+                trigger = make.make_trigger(trigger_name, make.make_empty_classifier(id="", data_id=data.id),
                                             component_ids=i.get(trigger_id).component_ids, model="probability")
             else:
                 trigger = make.make_trigger(trigger_name,
@@ -143,6 +147,7 @@ def replace_classifier(i, c_id, c_id_new, c_file = None, trigger_name=None):
             for ic, c in enumerate(trigger.component_ids):
                 if c_id == c:
                     trigger.component_ids[ic] = c_id_new
+                    i.replace(trigger.id, trigger)
 
 
 def update_threshold(i, c_id, step, trigger_name=None):
@@ -173,14 +178,18 @@ def update_threshold(i, c_id, step, trigger_name=None):
             data = __make_data_and_dataset(i, c_id, c_file, new_th)
             i.replace(trigger_old.classifier.data_id, data)
             trigger = make.make_trigger(trigger_name,
-                                        make.make_empty_classifier(data_id=data.id),
+                                        make.make_empty_classifier(id="", data_id=data.id),
                                         component_ids=i.get(trigger_id).component_ids, model="probability")
         else:
             trigger = make.make_trigger(trigger_name,
                                         make.make_classifier('', classifier_file=trigger_classifier_file),
                                         component_ids=i.get(trigger_id).component_ids)
-        i.replace(trigger_id, trigger)
-        i.get(c_id).component_id = trigger_name
+        i.replace(trigger_old.id, trigger)
+        c = i.get(c_id)
+        c.component_id = trigger_name
+        i.replace(c_id, c)
+
+
 
 
 #   ---- VERSION 2: Extend operations for merger ----    #

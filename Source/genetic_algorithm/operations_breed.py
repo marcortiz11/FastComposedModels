@@ -29,6 +29,7 @@ def remove(a, point, first=True):
         a.remove(point)
     else:
         component.component_id = ''  # There's nothing after
+        a.replace(component.id, component)
 
 
 def merge_chains_by_point(a, b, pointA, pointB):
@@ -51,7 +52,7 @@ def merge_chains_by_point(a, b, pointA, pointB):
             data = __make_data_and_dataset(a, pointA, a.get(pointA).classifier_file, th)
             a.add_data(data)  # TODO: Més eficient!
             trigger = make.make_trigger(trigger_name,
-                                        make.make_empty_classifier(data_id=data.id),
+                                        make.make_empty_classifier(id="", data_id=data.id),
                                         component_ids=b.get(next[0]).component_ids, model="probability")
         else:
             trigger = make.make_trigger(trigger_name,
@@ -59,7 +60,9 @@ def merge_chains_by_point(a, b, pointA, pointB):
                                         component_ids=b.get(next[0]).component_ids)
 
         a.add_trigger(trigger)
-        a.get(pointA).component_id = trigger_name
+        c = a.get(pointA)
+        c.component_id = trigger_name
+        a.replace(c.id, c)
         next = trigger.component_ids
 
     while len(next) > 0:
