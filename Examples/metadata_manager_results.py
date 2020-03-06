@@ -2,6 +2,7 @@ import random
 import os
 import json
 import Source.io_util as io
+import shutil
 from datetime import date
 
 
@@ -49,7 +50,7 @@ def save_results(meta_file, meta_data_results, params, R):
         with open(meta_file, 'w') as file:
             json.dump([], file)
 
-    save_path = meta_data_results['results']
+    save_path = os.path.join(os.environ['FCM'], meta_data_results['results'])
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
@@ -84,7 +85,7 @@ def save_results_and_ensembles(meta_file, meta_data_results, params, R, E):
         with open(meta_file, 'w') as file:
             json.dump([], file)
 
-    save_path = meta_data_results['results']
+    save_path = os.path.join(os.environ['FCM'], meta_data_results['results'])
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
@@ -114,7 +115,7 @@ def get_results_by_id(meta_file, id):
         meta_dataset = json.load(file)
         for entry in meta_dataset:
             if entry['id'] == id:
-                return os.path.join(entry['results'], 'results_ensembles.pkl')
+                return os.path.join(os.environ['FCM'], entry['results'], 'results_ensembles.pkl')
     return None
 
 
@@ -130,7 +131,7 @@ def get_ensembles_by_id(meta_file, id):
         meta_dataset = json.load(file)
         for entry in meta_dataset:
             if entry['id'] == id:
-                return os.path.join(entry['results'], 'ensembles.pkl')
+                return os.path.join(os.environ['FCM'], entry['results'], 'ensembles.pkl')
     return None
 
 
@@ -162,6 +163,26 @@ def get_ids_by_fieldval(meta_file, field, val):
             if entry[field] == val:
                 query_result.append(entry['id'])
     return query_result
+
+
+def delete_by_id(meta_file, ids):
+
+    """
+    Deletes entries in the experiment dataset that have a certain id
+    :param meta_file:
+    :param id:
+    :return:
+    """
+
+    with open(meta_file) as file:
+        meta_dataset = json.load(file)
+        for i, entry in enumerate(meta_dataset):
+            if entry['id'] in ids:
+                shutil.rmtree(os.path.join(os.environ['FCM'], 'Examples','Compute','chain_genetic_algorithm', entry['results']))
+                meta_dataset.pop(i)
+
+    with open(meta_file, 'w') as file:
+        json.dump(meta_dataset, file, indent=4)
 
 
 

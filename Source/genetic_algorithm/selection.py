@@ -52,3 +52,15 @@ def roulette_selection(fit_vals, num_population):
     return selected_ids
 
 
+def most_fit_selection(fit_vals, num_population):
+
+    """
+    Selects the num_population most fit individuals
+    :param fit_vals: Vector of fitting values
+    :param num_population: Number of individuals to select
+    :return: ids of the population for the next generation
+    """
+
+    num_population = num_population if num_population <= len(fit_vals) else len(fit_vals)
+    selected_ids = np.argsort(fit_vals)[-num_population:]
+    return selected_ids

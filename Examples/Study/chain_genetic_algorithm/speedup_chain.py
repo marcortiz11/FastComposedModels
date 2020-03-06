@@ -6,7 +6,7 @@ import os
 
 if __name__ == "__main__":
 
-    dataset = "sota_models_stl10-32-dev_validation"
+    dataset = "sota_models_fashion-mnist-32-dev_validation"
 
     # 0) Single DNNs
     models = io.read_pickle(os.path.join(os.environ['FCM'], 'SmallSamples', 'models_evaluation', dataset, 'models.pkl'))
@@ -21,22 +21,24 @@ if __name__ == "__main__":
                                             'results',
                                             'metadata.json')
 
-    GA_ids = results_manager.get_ids_by_fieldval(GA_results_metadata_file, 'dataset', dataset)[-1:]
+    GA_ids = results_manager.get_ids_by_fieldval(GA_results_metadata_file, 'dataset', dataset)[-3:]
 
     speedup = []
     for id in GA_ids:
-        local_path = results_manager.get_results_by_id(GA_results_metadata_file, id)
-        global_path = os.path.join(os.environ['FCM'], 'Examples', 'Compute', 'chain_genetic_algorithm', local_path)
+        global_path = results_manager.get_results_by_id(GA_results_metadata_file, id)
+        #global_path = os.path.join(os.environ['FCM'], 'Examples', 'Compute', 'chain_genetic_algorithm', local_path)
         GA_chains = io.read_pickle(global_path)
         front_GA_chain = front.get_front_time_accuracy(GA_chains, phase="test")
         sorted_front_GA_chain = front.sort_results_by_time(front_GA_chain, phase="test")
         speedup.append(front.get_speedup_front(sorted_models_front, sorted_front_GA_chain, e=1e6, phase="test"))
 
-    if len(speedup) > 1:
-        print("Genetic Algorithm:")
-        print("\tAvg speedup:", stats.mean(speedup))
-        print("\tMean speedup:", stats.median(speedup))
-        print("\tStd speedup:", stats.stdev(speedup))
+    if len(speedup) == 1:
+        speedup.append(speedup[-1])
+
+    print("Genetic Algorithm:")
+    print("\tAvg speedup:", stats.mean(speedup))
+    print("\tMean speedup:", stats.median(speedup))
+    print("\tStd speedup:", stats.stdev(speedup))
 
     # 2) Brute-force chain ensembles
     BF_results_metadata_file = os.path.join(os.environ['FCM'],

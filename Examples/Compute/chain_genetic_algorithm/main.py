@@ -30,11 +30,11 @@ def argument_parse(argv):
     parser.add_argument("--pm", default=0.8, type=float, help="Probability of mutation")
     parser.add_argument("--pc", default=0.2, type=float, help="Probability of crossing/breeding")
     # Fitting function params
-    parser.add_argument("--a", default=100, type=float)
+    parser.add_argument("--a", default=50, type=float)
     # Execution parameters
     parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
     parser.add_argument("--parallel", type=int, help="Parallel evaluation of the ensembles")
-    parser.add_argument("--save_ensembles", type=int, help="Save the ensemble solutions evaluated in pickle")
+    parser.add_argument("--save_ensembles", default=0, type=int, help="Save the ensemble solutions evaluated in pickle")
 
     return parser.parse_args(argv)
 
@@ -177,6 +177,7 @@ if __name__ == "__main__":
     P = generate_initial_population()
     R = evaluate_population(P)
     fit = fit_fun.f1_time_penalization_preevaluated(R, a=args.a)
+    io.save_pickle('initial_population_0.pkl', {'P': P, 'fit': fit})
     P_all = []  # Save all ensembles evaluated
 
     # Start the loop over generations
@@ -194,7 +195,7 @@ if __name__ == "__main__":
         fit_generation = fit + fit_offspring
         P_generation = P + P_offspring
         R_generation = R + R_offspring
-        selected = selection.roulette_selection(fit_generation, args.population)
+        selected = selection.most_fit_selection(fit_generation, args.population)
         P = [P_generation[i] for i in selected]
         fit = [fit_generation[i] for i in selected]
         R = [R_generation[i] for i in selected]
@@ -226,7 +227,7 @@ if __name__ == "__main__":
                                   'metadata.json')
 
     id = str(random.randint(0, 1e16))
-    results_loc = os.path.join('./results', args.dataset, id)
+    results_loc = os.path.join('Examples/Compute/chain_genetic_algorithm/results', args.dataset, id)
     comments = ""
     meta_data_result = manager_results.metadata_template(id, args.dataset, results_loc, comments)
 
@@ -235,6 +236,9 @@ if __name__ == "__main__":
 
     # Guardar els resultats en la carpeta del dataset
     R_dict_old.update(R_dict)
-    manager_results.save_results_and_ensembles(meta_data_file, meta_data_result, params, R_dict_old, P_all)
+    if args.save_ensembles:
+        manager_results.save_results_and_ensembles(meta_data_file, meta_data_result, params, R_dict_old, P_all)
+    else:
+        manager_results.save_results(meta_data_file, meta_data_result, params, R_dict_old)
 
 
