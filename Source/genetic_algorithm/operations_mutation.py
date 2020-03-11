@@ -190,8 +190,3 @@ def update_threshold(i, c_id, step, trigger_name=None):
         i.replace(c_id, c)
 
 
-
-
-#   ---- VERSION 2: Extend operations for merger ----    #
-
-

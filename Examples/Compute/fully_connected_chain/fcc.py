@@ -22,10 +22,10 @@ def update_dataset(model_file, ths, train_path, test_path):
 def build_3_chain_skeleton(pid):
     # ENSEMBLE SKELETON
     sys = sb.SystemBuilder(verbose=False)
-    trigger0_train_dataset = os.path.join(data_path, "train_trigger0" + pid)
-    trigger0_test_dataset = os.path.join(data_path, "test_trigger0" + pid)
-    trigger1_train_dataset = os.path.join(data_path, "train_trigger1" + pid)
-    trigger1_test_dataset = os.path.join(data_path, "test_trigger1" + pid)
+    trigger0_train_dataset = os.path.join(os.environ['FCM']+"/Data/", "train_trigger0" + pid)
+    trigger0_test_dataset = os.path.join(os.environ['FCM']+"/Data/", "test_trigger0" + pid)
+    trigger1_train_dataset = os.path.join(os.environ['FCM']+"/Data/", "train_trigger1" + pid)
+    trigger1_test_dataset = os.path.join(os.environ['FCM']+"/Data/", "test_trigger1" + pid)
     # Classifier 0
     c0 = make.make_empty_classifier("c0", component_id="trigger0" + pid)
     sys.add_classifier(c0)
@@ -69,17 +69,17 @@ def evaluation_3_chain_core(pid, c0, th0, th1, c1, th2, c2, work_done):
     """
     sys = build_3_chain_skeleton(pid)
 
-    trigger0_train_dataset = os.path.join(data_path, "train_trigger0" + pid)
-    trigger0_test_dataset = os.path.join(data_path, "test_trigger0" + pid)
-    trigger1_train_dataset = os.path.join(data_path, "train_trigger1" + pid)
-    trigger1_test_dataset = os.path.join(data_path, "test_trigger1" + pid)
+    trigger0_train_dataset = os.path.join(os.environ['FCM']+"/Data/", "train_trigger0" + pid)
+    trigger0_test_dataset = os.path.join(os.environ['FCM']+"/Data/", "test_trigger0" + pid)
+    trigger1_train_dataset = os.path.join(os.environ['FCM']+"/Data/", "train_trigger1" + pid)
+    trigger1_test_dataset = os.path.join(os.environ['FCM']+"/Data/", "test_trigger1" + pid)
 
     # Classifier 0
     sys.replace("c0", make.make_classifier("c0", c0, "trigger0" + pid))
     # Trigger 0
     update_dataset(c0, [th0, th1], trigger0_train_dataset, trigger0_test_dataset)
     trigger = make.make_trigger("trigger0" + pid, make.make_empty_classifier(data_id="trigger0_data"),
-                                ["c2", "c1"], model="probability_multiple_classifiers")
+                                ["c1", "c2"], model="probability_multiple_classifiers")
     sys.replace("trigger0" + pid, trigger)
     # Classifier 1
     sys.replace("c1", make.make_classifier("c1", c1, "trigger1" + pid))
@@ -148,6 +148,7 @@ if __name__ == "__main__":
         front = paretto.get_front_time_accuracy(R_models, phase="test")
         front_sorted = paretto.sort_results_by_accuracy(front, phase="test")
         models = [k for k, v in paretto.sort_results_by_accuracy(R_models, phase="val")]
+        print('\n'.join(models))
 
         records = front
 
@@ -161,10 +162,10 @@ if __name__ == "__main__":
             c0 = models[ic0]
             for th0 in np.arange(0, 1, step_th):
                 for th1 in np.arange((th0+step_th)*fc, fc + step_th, step_th):
-                    for ic1 in range(ic0+1, len(models)):
+                    for ic1 in range(len(models)):
                         c1 = models[ic1]
                         for th2 in np.arange(0, 1, step_th):
-                            for ic2 in range(ic1+1, len(models)):
+                            for ic2 in range(len(models)):
                                 c2 = models[ic2]
 
                                 # Start process

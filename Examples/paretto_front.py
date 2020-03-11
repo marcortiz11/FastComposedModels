@@ -117,7 +117,9 @@ def get_speedup_front(f0, f1, e, phase = None):
     for k, v in f1:
         if v['system'].time < e:
             speedup = time/v['system'].time
-        if v['system'].accuracy > acc: break
+        if v['system'].accuracy > acc:
+            print(k)
+            break
     return speedup
 
 

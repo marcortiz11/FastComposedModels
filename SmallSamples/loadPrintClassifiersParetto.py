@@ -79,6 +79,7 @@ if __name__ == "__main__":
              "sota_models_cifar10-32-dev_validation",
              "sota_models_fashion-mnist-32-dev_validation",
              "sota_models_flowers102-32-dev_validation",
+             "sota_models_food101-32-dev_validation",
              "sota_models_gtsrb-32-dev_validation",
              "sota_models_gtsrbcrop-32-dev_validation",
              "sota_models_mnist-32-dev_validation",
@@ -86,6 +87,10 @@ if __name__ == "__main__":
              "sota_models_caltech256-32-dev_validation",
              "sota_models_svhn-32-dev_validation",
              "sota_models_quickdraw-28-dev_validation"]
+
+    dsets = ["sota_models_cifar10-40-dev_validation"]
+
+    records = {}
 
     for id, d in enumerate(dsets):
         Classifier_Path = Dataset_Path + d + '/'
@@ -96,7 +101,6 @@ if __name__ == "__main__":
         sys = sb.SystemBuilder(verbose=False)
         smallClassifier = make.make_empty_classifier("Classifier")
         sys.add_classifier(smallClassifier)
-        records = {}
 
         for m_ in models:
 
@@ -123,8 +127,10 @@ if __name__ == "__main__":
 
         import Examples.paretto_front as pareto
         front = pareto.get_front_time_accuracy(records, phase="test")
+        print([key for key, val in front.items()])
 
-        plot_accuracy_time(front)
+        plot_accuracy_time(records)
         plt.legend()
         plt.show()
+
 
