@@ -6,7 +6,7 @@ import os
 
 if __name__ == "__main__":
 
-    dataset = "sota_models_gtsrb-32-dev_validation"
+    dataset = "sota_models_caltech256-32-dev_validation"
 
     # 0) Single DNNs
     models = io.read_pickle(os.path.join(os.environ['FCM'], 'SmallSamples', 'models_evaluation', dataset, 'models.pkl'))
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     BF_chains = io.read_pickle(global_path)
     front_BF_chains = front.get_front_time_accuracy(BF_chains, phase="test")
     sorted_front_BF_chains = front.sort_results_by_time(front_BF_chains, phase="test")
-    speedup = front.get_speedup_front(sorted_models_front, sorted_front_BF_chains, phase="test", e=1e6)
+    speedup = front.get_speedup_front(sorted_models_front, sorted_front_BF_chains, phase="test", e=1e4)
 
     print("Brute-Force Speedup: %f" % speedup)
 
