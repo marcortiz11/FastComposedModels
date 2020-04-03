@@ -138,7 +138,7 @@ class SystemBuilder:
 	# Returns the component in protobuf message
 	def get(self, id):
 		if id not in self.components:
-			print(self.system)
+			return None
 		return self.components[id]
 
 	# Get start component for evaluation

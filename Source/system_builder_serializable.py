@@ -72,6 +72,7 @@ class SystemBuilder:
 
 		type_component = self.get(id).DESCRIPTOR.name
 		system = self.__deserialize()
+
 		if type_component == "Trigger":
 			for i, c in enumerate(system.trigger):
 				if c.id == id: del system.trigger[i]

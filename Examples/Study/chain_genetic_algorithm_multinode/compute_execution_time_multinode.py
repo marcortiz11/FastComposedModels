@@ -12,7 +12,7 @@ if __name__ == "__main__":
     import os
 
     multinode_meta_file = os.path.join(os.environ['FCM'], 'Examples', 'Compute', 'chain_genetic_algorithm_multinode',
-                                       'results', 'sota_models_cifar10-40-dev_validation', 'cifar10_8nodes_800population_400offspring_1',
+                                       'results', 'sota_models_cifar10-40-dev_validation', 'cifar10_8nodes_800population_400offspring_0',
                                        'multinode_metainfo.json')
     execution_time = 0
     n_nodes = 8
@@ -30,7 +30,7 @@ if __name__ == "__main__":
             R_all.update(R_iter)
 
             print("Iteration %d: Offspring+evaluate %f, Selection %f" % (i, max_exec_offspring_time, selection_time))
-
+            
     print(R_all.keys())
     print("Execution time: %f" % execution_time)
 

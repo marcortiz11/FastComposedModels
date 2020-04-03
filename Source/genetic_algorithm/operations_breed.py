@@ -4,7 +4,7 @@ import copy
 import os
 
 
-#---- VERSION 1: Find the best chain ----#
+# ---- VERSION 1: Find the best chain ---- #
 def remove(a, point, first=True):
     """
     :param a: system
@@ -29,24 +29,25 @@ def remove(a, point, first=True):
         a.remove(point)
     else:
         component.component_id = ''  # There's nothing after
+        a.remove(component.id)
         a.replace(component.id, component)
 
 
-def merge_chains_by_point(a, b, pointA, pointB):
+def merge_chains_by_point(a, b, pointA, pointB, sub_folder=None):
     """
     :param a: Chain to be added part of chain b
     :param b: Chain b
     :param point: Point in the chain b form which to start adding
+    :param sub_folder: Folder where trained trigger's classifiers are saved
     :return: New chain
     """
 
-    next = [b.get(pointB).component_id] if b.get(pointB).component_id != '' else []  # Always should be a Classifier
+    next = [b.get(pointB).component_id] if b.get(pointB).component_id != '' else []
 
     if len(next) > 0:
         th = float(next[0].split("_")[2])
         trigger_name = "trigger_classifier_" + str(th) + "_" + pointA
-        trigger_classifier_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'tmp',
-                                               trigger_name + '.pkl')
+        trigger_classifier_file = os.path.join(os.environ['FCM'], os.environ['TMP'], trigger_name + '.pkl')
 
         if not os.path.exists(trigger_classifier_file):
             data = __make_data_and_dataset(a, pointA, a.get(pointA).classifier_file, th)

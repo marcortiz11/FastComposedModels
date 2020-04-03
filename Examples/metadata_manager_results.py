@@ -178,7 +178,7 @@ def delete_by_id(meta_file, ids):
         meta_dataset = json.load(file)
         for i, entry in enumerate(meta_dataset):
             if entry['id'] in ids:
-                shutil.rmtree(os.path.join(os.environ['FCM'], 'Examples','Compute','chain_genetic_algorithm', entry['results']))
+                shutil.rmtree(os.path.join(os.environ['FCM'], entry['results']))
                 meta_dataset.pop(i)
 
     with open(meta_file, 'w') as file:

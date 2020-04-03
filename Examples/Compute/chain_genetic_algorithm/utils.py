@@ -44,6 +44,28 @@ def pick_random_classifier(args, sys=None):
     return selected
 
 
+def get_classifier_index(chain, i):
+    """
+    :param chain: Ensemble chain
+    :param i: index of the classifier in the chain
+    :return: The classifier id in the index i
+    """
+
+    assert len(chain.get_message().classifier) > i, "ERROR: Index out of bounds"
+
+    c = chain.get(chain.get_start())
+    next = c.component_id
+    i_ = 0
+    while i_ != i:
+        trigger = chain.get(next)
+        if trigger is None:
+            break
+        c = chain.get(trigger.component_ids[0])
+        next = c.component_id
+        i_ += 1
+    return c.id
+
+
 # Plot alive individuals
 def plot_population(R, R_models, iter, fit=None):
     f = plt.figure(1)

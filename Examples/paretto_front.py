@@ -93,6 +93,33 @@ def get_front_accuracy_params(R):
     return dict(paretto_models)
 
 
+def get_speedup_id(f0, f1, e, phase = None):
+    """
+    SUMMARY :Given a resource, compute the speedup of one front vs the other.
+            Speedup = same accuracy less time
+    :param f0: Front of classifiers/models 1
+    :param f1: Front of classifiers/models 2
+    :param e: Epsilon = ammount of resource (time,params)
+    :return: Speedup of the front1 vs front0 given e
+    """
+    if phase == "test":
+        f0 = [(k, f.test) for k, f in f0]
+        f1 = [(k, f.test) for k, f in f1]
+
+    acc = 0
+    for k, v in f0:
+        if v['system'].time < e:
+            acc = v['system'].accuracy
+
+    id = ""
+    for k, v in f1:
+        if v['system'].time < e:
+            id = k
+        if v['system'].accuracy > acc:
+            break
+    return id
+
+
 def get_speedup_front(f0, f1, e, phase = None):
     """
     SUMMARY :Given a resource, compute the speedup of one front vs the other.
@@ -117,8 +144,7 @@ def get_speedup_front(f0, f1, e, phase = None):
     for k, v in f1:
         if v['system'].time < e:
             speedup = time/v['system'].time
-        if v['system'].accuracy > acc:
-            print(k)
+        if v['system'].accuracy >= acc:
             break
     return speedup
 

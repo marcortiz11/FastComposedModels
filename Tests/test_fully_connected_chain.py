@@ -1,6 +1,6 @@
 import Source.make_util as make
 import Source.system_evaluator as eval
-import Source.system_builder as sb
+import Source.system_builder_serializable as sb
 import Source.io_util as io
 import os
 
@@ -27,75 +27,80 @@ if __name__ == "__main__":
     trigger0_test_dataset = os.path.join(data_path, "test_trigger0")
     trigger1_train_dataset = os.path.join(data_path, "train_trigger1")
     trigger1_test_dataset = os.path.join(data_path, "test_trigger1")
-    c0_file = "../Definitions/Classifiers/front45_models/V001_DenseNet_s1_3.pkl"
-    c1_file = "../Definitions/Classifiers/front45_models/V001_DenseNet_s2_32.pkl"
-    c2_file = "../Definitions/Classifiers/front45_models/V001_DenseNet_s3_71.pkl"
-    # Classifier 0
+    c0_file = "../Definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_VGG13_ref_0.pkl"
+    c1_file = "../Definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_ResNet34_ref_0.pkl"
+    c2_file = "../Definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_DenseNet121_ref_0.pkl"
+
+    # Classifier/Trigger 0
     c0 = make.make_classifier("c0", c0_file, component_id="trigger0")
     sys.add_classifier(c0)
-    # Data for trigger 0
     source = make.make_source(trigger0_train_dataset, trigger0_test_dataset, 2)
     data0 = make.make_data("trigger0_data", int(5e4), int(1e4), source=source)
     sys.add_data(data0)
-    # Trigger 0
     trigger0 = make.make_trigger("trigger0", make.make_empty_classifier(data_id="trigger0_data"),
-                                 ["c2", "c1"], model="probability_multiple_classifiers")
+                                 ["c1", "c2"], model="probability_multiple_classifiers")
     sys.add_trigger(trigger0)
-    # Classifier 1
-    c1 = make.make_classifier("c1", c1_file)
-    sys.add_classifier(c1)
-    # Data for trigger 1
+
+    # Classifier/Trigger 1
     source = make.make_source(trigger1_train_dataset, trigger1_test_dataset, 2)
     data1 = make.make_data("trigger1_data", int(5e4), int(1e4), source=source)
     sys.add_data(data1)
-    update_dataset(c2_file, [0], trigger1_train_dataset, trigger1_test_dataset)
-    # Trigger 1
+    update_dataset(c1_file, [0], trigger1_train_dataset, trigger1_test_dataset)
     trigger1 = make.make_trigger("trigger1", make.make_empty_classifier(data_id="trigger1_data"),
-                                 ["c1"], model="probability_multiple_classifiers")
+                                 ["c2"], model="probability_multiple_classifiers")
+    c1 = make.make_classifier("c1", c1_file, component_id="trigger1")
+    sys.add_classifier(c1)
     sys.add_trigger(trigger1)
+
     # Classifier 2
-    c2 = make.make_classifier("c2", c2_file, component_id="trigger1")
+    c2 = make.make_classifier("c2", c2_file)
     sys.add_classifier(c2)
+
+    # ---- TEST ---- #
 
     # Test 1 -> All instances executed by the bigger network
     update_dataset(c0_file, [0, 1.1], trigger0_train_dataset, trigger0_test_dataset)
-    trigger0 = make.make_trigger("trigger0", make.make_empty_classifier(data_id="trigger0_data"),
-                                 ["c2", "c1"], model="probability_multiple_classifiers")
+    trigger0 = make.make_trigger("trigger0", make.make_empty_classifier(id="", data_id="trigger0_data"),
+                                 ["c1", "c2"], model="probability_multiple_classifiers")
     sys.replace("trigger0", trigger0)
     R1 = eval.evaluate(sys, "c0")
-    assert R1.test['system'].accuracy == R1.test['c1'].accuracy and \
-            R1.test['system'].time == R1.test['c0'].time + R1.test['c1'].time, "Error in test 1"
+    assert R1.test['system'].accuracy == R1.test['c2'].accuracy and \
+            R1.test['system'].time == R1.test['c0'].time + R1.test['c2'].time, "Error in test 1"
     print("TEST 1: PASS")
 
     # Test 2 -> All instances executed by the medium network
     update_dataset(c0_file, [1.1, 0], trigger0_train_dataset, trigger0_test_dataset)
-    trigger0 = make.make_trigger("trigger0", make.make_empty_classifier(data_id="trigger0_data"),
-                                 ["c2", "c1"], model="probability_multiple_classifiers")
+    trigger0 = make.make_trigger("trigger0", make.make_empty_classifier(id="", data_id="trigger0_data"),
+                                 ["c1", "c2"], model="probability_multiple_classifiers")
     sys.replace("trigger0", trigger0)
     R2 = eval.evaluate(sys, "c0")
-    assert R2.test['system'].accuracy == R2.test['c2'].accuracy and \
-            R2.test['system'].time == R2.test['c0'].time + R2.test['c2'].time, "Error in test 2"
+    assert R2.test['system'].accuracy == R2.test['c1'].accuracy and \
+            R2.test['system'].time == R2.test['c0'].time + R2.test['c1'].time, "Error in test 2"
     print("TEST 2: PASS")
 
     # Test 3 -> All instances executed by the bigger network
-    update_dataset(c2_file, [1.1], trigger1_train_dataset, trigger1_test_dataset)
+    update_dataset(c1_file, [1.1], trigger1_train_dataset, trigger1_test_dataset)
     # Trigger 1
     trigger1 = make.make_trigger("trigger1", make.make_empty_classifier(data_id="trigger1_data"),
-                                 ["c1"], model="probability_multiple_classifiers")
+                                 ["c2"], model="probability_multiple_classifiers")
     sys.replace("trigger1", trigger1)
     R3 = eval.evaluate(sys, "c0")
-    assert R3.test['system'].accuracy == R3.test['c1'].accuracy and\
+    assert R3.test['system'].accuracy == R3.test['c2'].accuracy and\
             R3.test['system'].time == R3.test['c0'].time + R3.test['c2'].time + R3.test['c1'].time, "Error in test 3"
     print("TEST 3: PASS")
 
+
     # Test 4 -> All instances executed by the big network, different path in the graph
-    update_dataset(c0_file, [0.7, 1.1], trigger0_train_dataset, trigger0_test_dataset)
-    trigger0 = make.make_trigger("trigger0", make.make_empty_classifier(data_id="trigger0_data"),
-                                 ["c2", "c1"], model="probability_multiple_classifiers")
+    update_dataset(c0_file, [0.6, 1.1], trigger0_train_dataset, trigger0_test_dataset)
+    trigger0 = make.make_trigger("trigger0", make.make_empty_classifier(id="", data_id="trigger0_data"),
+                                 ["c1", "c2"], model="probability_multiple_classifiers")
     sys.replace("trigger0", trigger0)
     R3 = eval.evaluate(sys, "c0")
-    assert R3.test['system'].accuracy == R3.test['c1'].accuracy, "Error in test 4"
-    print("TEST 4: PASS")
+    assert R3.test['system'].accuracy == R3.test['c2'].accuracy, "Error in test 4 accuracy"
+    assert R3.test['system'].params == R3.test['c0'].params + R3.test['c1'].params + R3.test['c2'].params + 2, \
+                                    "Error in test 4 params"
+    print("TEST 4 PASS")
+
 
     # Test 5 -> Incrementing the threshold on a fully connected chain
     import numpy as np
@@ -106,12 +111,12 @@ if __name__ == "__main__":
         # Send to Network 2
         update_dataset(c0_file, [th, 0], trigger0_train_dataset, trigger0_test_dataset)
         trigger0 = make.make_trigger("trigger0", make.make_empty_classifier(data_id="trigger0_data"),
-                                     ["c2", "c1"], model="probability_multiple_classifiers")
+                                     ["c1", "c2"], model="probability_multiple_classifiers")
         sys.replace("trigger0", trigger0)
         # Send to network 1
         update_dataset(c2_file, [th], trigger1_train_dataset, trigger1_test_dataset)
         trigger1 = make.make_trigger("trigger1", make.make_empty_classifier(data_id="trigger1_data"),
-                                     ["c1"], model="probability_multiple_classifiers")
+                                     ["c2"], model="probability_multiple_classifiers")
         sys.replace("trigger1", trigger1)
         R["system_"+str(th)] = eval.evaluate(sys, "c0").test
 

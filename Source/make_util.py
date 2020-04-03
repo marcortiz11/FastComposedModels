@@ -70,10 +70,9 @@ def make_classifier(id, classifier_file, component_id=None, data_id=None):
     return message
 
 
-def make_empty_classifier(id=None, data_id=None, component_id=None):
+def make_empty_classifier(id="", data_id=None, component_id=None):
     message = fcm.Classifier()
-    if id is not None:
-        message.id = id
+    message.id = id  # id is mandatory
     if component_id is not None:
         message.component_id = component_id
     if data_id is not None:

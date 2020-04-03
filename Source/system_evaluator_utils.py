@@ -52,7 +52,10 @@ def train_trigger(sys, c):
 
         module = importlib.import_module('.'+c.model, package='Definitions.Triggers')
         c_dict = module.train_fit(sys, c.id)
-        tmp_location = os.path.join(os.environ['FCM'], 'Definitions/Classifiers/tmp/')
+        if 'TMP' in os.environ:
+            tmp_location = os.path.join(os.environ['FCM'], os.environ['TMP']+'/')
+        else:
+            tmp_location = os.path.join(os.environ['FCM'], 'Definitions/Classifiers/tmp/')
         classifier_file = c.id
         io.save_pickle(tmp_location + classifier_file, c_dict)
         c.classifier.classifier_file = tmp_location + classifier_file

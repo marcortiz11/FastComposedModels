@@ -23,18 +23,20 @@ def argument_parse(argv):
                                      description="Genetic algorithm for finding the best chain under environment constraints.")
     parser.add_argument("--dataset", default="front45_models_validation", help="Datasets to evaluate d1 d2 d3, default=*")
     # Search space params
-    parser.add_argument("--population", default=100, type=int, help="Population at each generation")
-    parser.add_argument("--offspring", default=100, type=int, help="Children generated at each generation")
-    parser.add_argument("--iterations", default=20, type=int, help="Number of iterations before finishing algorithm")
+    parser.add_argument("--population", default=1000, type=int, help="Population at each generation")
+    parser.add_argument("--offspring", default=500, type=int, help="Children generated at each generation")
+    parser.add_argument("--iterations", default=40, type=int, help="Number of iterations before finishing algorithm")
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
     parser.add_argument("--pm", default=0.8, type=float, help="Probability of mutation")
     parser.add_argument("--pc", default=0.2, type=float, help="Probability of crossing/breeding")
+    parser.add_argument("--selection", default="nfit", type=str, help="most fit selection (mfit) or roulette (roulette)")
     # Fitting function params
     parser.add_argument("--a", default=50, type=float)
     # Execution parameters
     parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
     parser.add_argument("--parallel", type=int, help="Parallel evaluation of the ensembles")
     parser.add_argument("--save_ensembles", default=0, type=int, help="Save the ensemble solutions evaluated in pickle")
+    parser.add_argument("--comment", default="", type=str, help="Meaningful comments about the run")
 
     return parser.parse_args(argv)
 
@@ -45,7 +47,7 @@ def __get_classifier_name(c_file):
 
 def __get_val_accuracy(c_file):
     s = sb.SystemBuilder()
-    c = make.make_classifier("asdf",c_file)
+    c = make.make_classifier("asdf", c_file)
     s.add_classifier(c)
     s.set_start("asdf")
     return ev.evaluate(s, s.get_start(), phases=["val"]).val['system'].accuracy
@@ -112,12 +114,14 @@ def crossover_operation(P, fit_vals):
 
     if len(classifiersA) > 1 and len(classifiersB) > 1:
         random_number = random.randint(0, min(len(classifiersA)-1, len(classifiersB)-1))
-        pointA = classifiersA[random_number].id
-        pointB = classifiersB[random_number].id
+        pointA = utils.get_classifier_index(P[ai], random_number)
+        pointB = utils.get_classifier_index(P[bi], random_number)
 
         offspring = ob.singlepoint_crossover(P[ai], P[bi], pointA, pointB)
         for o in offspring:
             o.set_sysid(utils.generate_system_id_chain(o))  # Create ids for the offspring individuals
+            assert len(o.get_message().classifier) < 4, "ERROR: Osspring > 3 classifiers chain"
+
 
     return offspring
 
@@ -166,6 +170,9 @@ if __name__ == "__main__":
 
     global args
     args = argument_parse(sys.argv[1:])
+    os.environ['TMP'] = 'Definitions/Classifiers/tmp/'+args.dataset[12:-15]
+    if not os.path.exists(os.path.join(os.environ['FCM'], os.environ['TMP'])):
+        os.makedirs(os.path.join(os.environ['FCM'], os.environ['TMP']))
     random.seed()
 
     R_dict = {}
@@ -177,7 +184,6 @@ if __name__ == "__main__":
     P = generate_initial_population()
     R = evaluate_population(P)
     fit = fit_fun.f1_time_penalization_preevaluated(R, a=args.a)
-    io.save_pickle('initial_population_0.pkl', {'P': P, 'fit': fit})
     P_all = []  # Save all ensembles evaluated
 
     # Start the loop over generations
@@ -195,7 +201,10 @@ if __name__ == "__main__":
         fit_generation = fit + fit_offspring
         P_generation = P + P_offspring
         R_generation = R + R_offspring
-        selected = selection.most_fit_selection(fit_generation, args.population)
+        if args.selection == "nfit":
+            selected = selection.most_fit_selection(fit_generation, args.population)
+        else:
+            selected = selection.roulette_selection(fit_generation, args.population)
         P = [P_generation[i] for i in selected]
         fit = [fit_generation[i] for i in selected]
         R = [R_generation[i] for i in selected]
@@ -228,7 +237,7 @@ if __name__ == "__main__":
 
     id = str(random.randint(0, 1e16))
     results_loc = os.path.join('Examples/Compute/chain_genetic_algorithm/results', args.dataset, id)
-    comments = ""
+    comments = args.comment
     meta_data_result = manager_results.metadata_template(id, args.dataset, results_loc, comments)
 
     # Obtenir el diccionari de params

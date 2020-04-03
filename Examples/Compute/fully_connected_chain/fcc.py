@@ -106,7 +106,8 @@ def argument_parse(argv):
     parser.add_argument("--datasets", nargs="*", default="*", help="Datasets to evaluate d1 d2 d3, default=*")
     parser.add_argument("--step_th", default=0.1, type=float, help="Threshold step, default=0.1")
     parser.add_argument("--fc", default=0, type=int, help="All combinations with fully connected chain, default=fc")
-    parser.add_argument("--parallel", default=0, type=int, help="Number of nodes paralellism")
+    parser.add_argument("--parallel", default=1, type=int, help="Number of nodes paralellism")
+    parser.add_argument("--comment", default="", type=str, help="Comments about the experiment")
     return parser.parse_args(argv)
 
 
@@ -161,11 +162,11 @@ if __name__ == "__main__":
         for ic0 in range(len(models)):
             c0 = models[ic0]
             for th0 in np.arange(0, 1, step_th):
-                for th1 in np.arange((th0+step_th)*fc, fc + step_th, step_th):
-                    for ic1 in range(len(models)):
+                for th1 in np.arange(0, 0+step_th, step_th):
+                    for ic1 in range(ic0, len(models)):
                         c1 = models[ic1]
                         for th2 in np.arange(0, 1, step_th):
-                            for ic2 in range(len(models)):
+                            for ic2 in range(ic1, len(models)):
                                 c2 = models[ic2]
 
                                 # Start process
@@ -183,14 +184,9 @@ if __name__ == "__main__":
 
                                     while not work_done.empty():
                                         r = work_done.get()
-                                        records[r[0]] = r[1]
-
-                        # Buidar solucions que no pertanyen al paretto front
-                        optimal_chains = paretto.get_front_time_accuracy(records, phase="test")
-                        records.clear()
-                        records = optimal_chains
-                        print("%d chains in the front" % len(records.keys()))
-
+                                        # Save only chain results whose accuracy > best NN
+                                        if r[1].test['system'].accuracy >= front_sorted[-1][1].test['system'].accuracy:
+                                            records[r[0]] = r[1]
 
         # Crear la meta_data
         meta_data_file = os.path.join(os.environ['FCM'],
@@ -201,8 +197,7 @@ if __name__ == "__main__":
                                       'metadata.json')
         id = str(random.randint(0, 1e16))
         results_loc = os.path.join('Examples/Compute/fully_connected_chain/results', dataset, id)
-        comments = "ONLY PARETTO FRONT SAVED"
-        meta_data_result = manager_results.metadata_template(id, dataset, results_loc, comments)
+        meta_data_result = manager_results.metadata_template(id, dataset, results_loc, args.comment)
 
         # Obtenir el diccionari de params
         params = args.__dict__

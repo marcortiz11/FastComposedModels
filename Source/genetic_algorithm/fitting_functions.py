@@ -28,7 +28,7 @@ def f1_time_penalization(P, a=100, b=1, time_constraint = None):
 
 
 
-def f1_time_penalization_preevaluated(P_r, a=100):
+def f1_time_penalization_preevaluated(P_r, a=50):
     """
     F(acc, time) = a*acc + b*(t/tr)
     :param P_r: List of evaluation results for each individual in the population
@@ -45,7 +45,7 @@ def f1_time_penalization_preevaluated(P_r, a=100):
     return fit
 
 
-def f2_time_penalization_preevaluated(P_r, a=100):
+def f2_time_penalization_preevaluated(P_r, a=50):
     """
     F(acc, time) = a*acc + b*(t/tr)
     :param a: Weights accuracy
@@ -58,4 +58,25 @@ def f2_time_penalization_preevaluated(P_r, a=100):
         acc = i.val['system'].accuracy
         time_inference = i.val['system'].time
         fit[i_ind] = pow((a * acc) / time_inference, 3)
+    return fit
+
+
+def f1_time_param_penalization(P_r, a=5):
+
+    """
+    F(acc, time) = a*test_accuracy / (inference_time*model_params)
+    :param a: Weights accuracy
+    :param b: Weights time
+    :return:
+    :param c: Weights parameters
+    """
+
+    fit = [0] * len(P_r)
+    max_time = max([i.val['system'].time for i in P_r])
+    max_params = max([i.val['system'].params for i in P_r])
+    for i_ind, i in enumerate(P_r):
+        acc = i.val['system'].accuracy
+        inference_time = i.val['system'].time/max_time
+        model_params = i.val['system'].params/max_params
+        fit[i_ind] = pow((a*acc) - inference_time - model_params, 3)
     return fit

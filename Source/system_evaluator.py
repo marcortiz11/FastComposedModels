@@ -21,6 +21,7 @@ class Metrics(object):
 class Results(object):
     __slots__ = ('train', 'test', 'val')
 
+
 def update_metrics_classifier(m, c_dict, predictions, gt, n_inputs):
     correct = m.instances*m.accuracy
     m.instances += n_inputs
@@ -55,7 +56,6 @@ def update_metrics_system(results, c_dict, n_inputs, phase="test", input_ids=[])
     results['system'].time_max += np.max(c_dict['metrics']['times']) / 128 * n_inputs
     results['system'].time_min += np.min(c_dict['metrics']['times']) / 128 * n_inputs
     results['system'].time_std += np.std(c_dict['metrics']['times']) / 128 * n_inputs
-    results['system'].params += c_dict['metrics']['params']
     results['system'].ops += c_dict['metrics']['ops']
 
 
@@ -254,18 +254,24 @@ def evaluate(sys, start_id, check_classifiers=False, evaluate_train=False, class
     if "test" in phases or not phases:  # Si no s'especifica, sempre evalua el dataset de test
         contribution = __evaluate(sys, eval.test, component, check_classifiers, classifier_dict)
         eval.test['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution['predictions'], contribution['gt'])
+        eval.test['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.test.items()
+                                          if classifier_id != 'system'])
         # eval.test['system'].instance_model = contribution['model']
 
     contribution_train = None
     if "train" in phases or evaluate_train:
         contribution_train = __evaluate(sys, eval.train, component, check_classifiers, classifier_dict, phase="train")
         eval.train['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution_train['predictions'], contribution_train['gt'])
+        eval.train['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.train.items() \
+                                          if classifier_id != 'system'])
         # eval.train['system'].instance_model = contribution_train['model']
 
     contribution_val = None
     if "val" in phases:
         contribution_val = __evaluate(sys, eval.val, component, check_classifiers, classifier_dict, phase="val")
         eval.val['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution_val['predictions'], contribution_val['gt'])
+        eval.val['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.val.items() \
+                                            if classifier_id != 'system'])
         # eval.val['system'].instance_model = contribution_val['model']
 
     # TODO: Falta que validation set es pugui guardar com a diccionari

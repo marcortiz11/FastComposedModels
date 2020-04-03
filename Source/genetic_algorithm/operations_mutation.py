@@ -65,8 +65,7 @@ def extend_chain_pt(i, c_id, th=None, c_file = None, trigger_name=None):
         # Create dataset for new trigger if trigger's classifier not existing
         if trigger_name is None:
             trigger_name = "trigger_classifier_" + str(th) + "_" + last_id
-        trigger_classifier_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'tmp',
-                                               trigger_name+'.pkl')
+        trigger_classifier_file = os.path.join(os.environ['FCM'], os.environ['TMP'], trigger_name+'.pkl')
 
         if not os.path.exists(trigger_classifier_file):
             data = __make_data_and_dataset(i, last_id, i.get(last_id).classifier_file, th)
@@ -116,8 +115,7 @@ def replace_classifier(i, c_id, c_id_new, c_file = None, trigger_name=None):
 
             if trigger_name is None:
                 trigger_name = "trigger_classifier_" + str(th) + "_" + c_id_new
-            trigger_classifier_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'tmp',
-                                                   trigger_name+'.pkl')
+            trigger_classifier_file = os.path.join(os.environ['FCM'], os.environ['TMP'], trigger_name+'.pkl')
 
             if not os.path.exists(trigger_classifier_file):
                 data = __make_data_and_dataset(i, c_id_new, c_file, th)
@@ -171,8 +169,7 @@ def update_threshold(i, c_id, step, trigger_name=None):
 
         if trigger_name is None:
             trigger_name = "trigger_classifier_" + str(new_th) + "_" + c_id
-        trigger_classifier_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'tmp',
-                                               trigger_name+'.pkl')
+        trigger_classifier_file = os.path.join(os.environ['FCM'], os.environ['TMP'], trigger_name+'.pkl')
 
         if not os.path.exists(trigger_classifier_file):
             data = __make_data_and_dataset(i, c_id, c_file, new_th)

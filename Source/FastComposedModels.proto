@@ -10,7 +10,7 @@ message Data {
 	message Source{
 		required string train_path = 1;
 		required string test_path = 2;
-		required string val_path = 4;
+		optional string val_path = 4;
 		required Type format = 3;
 		enum Type{
 			H5=0;
