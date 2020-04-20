@@ -1,7 +1,6 @@
 # FastComposedModels
 Framework that allows to build and evaluate efficiently ensemble methods for neural networks by considering the evaluation results
-of the network (logits, inference time, params, flops) in train and test in classification tasks. Framework developed by Marc Ortiz and Florian Scheideger
-during my two month internship at IBM.
+of the network (logits, inference time, params, flops) in train and test in classification tasks.
 
 ## Design of ensemble methods
 The ensemble of NNs in the framework translates into the definition, building and evaluation of a DAG; 
