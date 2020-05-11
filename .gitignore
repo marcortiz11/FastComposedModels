@@ -1,9 +1,19 @@
-# Ignore symbolic link to git
-Data/
-Definitions/
+# Folders
+data/
+definitions/
 results/
 figs/
 figures/
 .idea/
 tmp/
+papers/
+iotnets/
+
+# File types
 *.pkl
+*.sh
+*.jpg
+*.png
+
+# Files
+.gitignore
