@@ -119,6 +119,28 @@ def get_results_by_id(meta_file, id):
     return None
 
 
+def get_results_by_params(meta_file, param):
+    """
+    Returns the evaluation results of a set of ensembles with parameter values = param
+    :param meta_file: Dataset metadata
+    :param param: Input parameters of the python execution
+    :return: File location of the results
+    """
+    result_locations = []
+    with open(meta_file) as file:
+        meta_dataset = json.load(file)
+        for entry in meta_dataset:
+            param_entry = entry['params']
+            valid = True
+            for key in param.keys():
+                if key not in param_entry or param_entry[key] != param[key]:
+                    valid = False
+                    break
+            if valid:
+                result_locations += [os.path.join(os.environ['FCM'], entry['results'], 'results_ensembles.pkl')]
+    return result_locations
+
+
 def get_ensembles_by_id(meta_file, id):
     """
     Returns the ensembles evaluated with experiment id = id

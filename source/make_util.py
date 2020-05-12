@@ -6,8 +6,8 @@ import numpy as np
 
 
 def make_source(train_path, test_path, format, val_path=None):
-    assert "/data" in test_path or "\Data" in test_path and \
-           "/data" in train_path or "\Data" in train_path,\
+    assert "/data" in test_path or "\data" in test_path and \
+           "/data" in train_path or "\data" in train_path,\
         "Datasets should be saved in the data folder of the project."
     message = fcm.Data.Source(train_path=train_path, test_path=test_path, val_path=val_path, format=format)
     return message

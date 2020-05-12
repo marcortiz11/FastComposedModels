@@ -7,8 +7,8 @@ import source.genetic_algorithm.fitting_functions as fit_fun
 import source.genetic_algorithm.operations_mutation as om
 import source.genetic_algorithm.operations_breed as ob
 import examples.compute.chain_genetic_algorithm.utils as utils
+from source.iotnets.main_run_chain import chain_inference_time as chain_inference_time_validation
 import argparse, sys, random, os, time
-from source.iotnets.main_run_chain import chain_inference_time
 
 global args
 
@@ -28,7 +28,7 @@ def argument_parse(argv):
     parser.add_argument("--a", default=5, type=float)
     # Execution parameters
     parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
-    parser.add_argument("--parallel", type=int, help="Parallel evaluation of the ensembles")
+    parser.add_argument("--parallel", default=40, type=int, help="Parallel evaluation of the ensembles")
     parser.add_argument("--comment", default="", type=str, help="Meaningful comments about the run")
 
     return parser.parse_args(argv)
@@ -130,7 +130,7 @@ def evaluate_process(P, pi, R, cores):
     while i < len(P):
         R[i] = ev.evaluate(P[i], P[i].get_start(), phases=["test", "val"])
 
-        # Run DNN on CPU with batches of 128 images
+        # Validation time is real CPU time
         classifiers_chain = [utils.get_classifier_index(P[i], 0)] * 3
         ths = [0, 0]
 
@@ -146,9 +146,9 @@ def evaluate_process(P, pi, R, cores):
             classifiers_chain[2] = c_id
             ths[1] = float(t_id.split("_")[2])
 
-        # Validation inference time 1 batch 128
-        R[i].val['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths)
-        print("Individual %d running time: %f" % (i, R[i].val['system'].time))
+        update = R[i]
+        update.val['system'].time = chain_inference_time_validation(args.dataset, classifiers_chain, ths, bs=128)
+        R[i] = update
 
         i += cores
 
