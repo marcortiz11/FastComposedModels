@@ -7,7 +7,6 @@ import source.genetic_algorithm.fitting_functions as fit_fun
 import source.genetic_algorithm.operations_mutation as om
 import source.genetic_algorithm.operations_breed as ob
 import examples.compute.chain_genetic_algorithm.utils as utils
-from source.iotnets.main_run_chain import chain_inference_time as chain_inference_time_validation
 import argparse, sys, random, os, time
 
 global args
@@ -125,12 +124,14 @@ def generate_offspring(P, fit_vals, o=None):
     return offspring
 
 
-def evaluate_process(P, pi, R, cores):
+def evaluate_process(P, pi, R, cores, phases):
     i = pi
     while i < len(P):
-        R[i] = ev.evaluate(P[i], P[i].get_start(), phases=["test", "val"])
+        R[i] = ev.evaluate(P[i], P[i].get_start(), phases=phases)
 
-        # Validation time is real CPU time
+        # Measure real CPU time
+        from source.iotnets.main_run_chain import chain_inference_time
+        
         classifiers_chain = [utils.get_classifier_index(P[i], 0)] * 3
         ths = [0, 0]
 
@@ -139,6 +140,7 @@ def evaluate_process(P, pi, R, cores):
             t_id = P[i].get(classifiers_chain[0]).component_id
             classifiers_chain[1] = c_id
             ths[0] = float(t_id.split("_")[2])
+            
 
         if len(P[i].get_message().classifier) > 2:
             c_id = utils.get_classifier_index(P[i], 2)
@@ -147,13 +149,16 @@ def evaluate_process(P, pi, R, cores):
             ths[1] = float(t_id.split("_")[2])
 
         update = R[i]
-        update.val['system'].time = chain_inference_time_validation(args.dataset, classifiers_chain, ths, bs=128)
+        if 'val' in phases:
+            update.val['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='val')
+        if 'test' in phases:
+            update.test['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='test')
         R[i] = update
 
         i += cores
 
 
-def evaluate_population(P):
+def evaluate_population(P, phases=['test','val']):
     """
     :param P: Population
     :return:
@@ -164,14 +169,14 @@ def evaluate_population(P):
         processes = []
         R_manager = Manager().list(R)
         for i in range(args.parallel):
-            processes.append(Process(target=evaluate_process, args=(P, i, R_manager, args.parallel)))
+            processes.append(Process(target=evaluate_process, args=(P, i, R_manager, args.parallel, phases)))
             processes[i].start()
         for i in range(args.parallel):
             processes[i].join()
         return list(R_manager)
     else:
         for i, p in enumerate(P):
-            R[i] = ev.evaluate(p, p.get_start(), phases=["test", "val"])
+            R[i] = ev.evaluate(p, p.get_start(), phases=phases)
     return R
 
 
@@ -200,7 +205,8 @@ if __name__ == "__main__":
     while iteration < args.iterations:
         start = time.time()
 
-        # Generate offspring (crossover+mutation)
+        # Generate offspring (crossover+mutation
+        # )
         P_offspring = generate_offspring(P, fit)
         # Evaluate offspring
         R_offspring = evaluate_population(P_offspring)
