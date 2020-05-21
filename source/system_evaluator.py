@@ -230,6 +230,7 @@ def evaluate(sys, start_id, check_classifiers=False, evaluate_train=False, class
     eval.test['system'].time_max = 0
     eval.test['system'].time_min = 0
     eval.test['system'].time_std = 0
+    eval.test['system'].instances = 0
 
     eval.train['system'] = Metrics()
     eval.train['system'].time = 0
@@ -239,6 +240,7 @@ def evaluate(sys, start_id, check_classifiers=False, evaluate_train=False, class
     eval.train['system'].time_max = 0
     eval.train['system'].time_min = 0
     eval.train['system'].time_std = 0
+    eval.train['system'].instances = 0
 
     eval.val['system'] = Metrics()
     eval.val['system'].time = 0
@@ -248,6 +250,7 @@ def evaluate(sys, start_id, check_classifiers=False, evaluate_train=False, class
     eval.val['system'].time_max = 0
     eval.val['system'].time_min = 0
     eval.val['system'].time_std = 0
+    eval.val['system'].instances = 0
 
     component = sys.get(start_id)
 
