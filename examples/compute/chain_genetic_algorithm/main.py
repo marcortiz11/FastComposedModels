@@ -27,7 +27,8 @@ def argument_parse(argv):
     parser.add_argument("--a", default=5, type=float)
     # Execution parameters
     parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
-    parser.add_argument("--parallel", default=40, type=int, help="Parallel evaluation of the ensembles")
+    parser.add_argument("--parallel", default=20, type=int, help="Parallel evaluation of the ensembles")
+    parser.add_argument("--device", default="cpu", type=str, help="Device where to execute the ensembles (cpu or gpu)")
     parser.add_argument("--comment", default="", type=str, help="Meaningful comments about the run")
 
     return parser.parse_args(argv)
@@ -117,10 +118,13 @@ def generate_offspring(P, fit_vals, o=None):
     offspring = []
     while len(offspring) < o:
         r = random.random()
+        offspring_i = []
         if args.pm > r:
-            offspring += mutation_operation(P, fit_vals)
+            offspring_i += mutation_operation(P, fit_vals)
         if args.pc > r:
-            offspring += crossover_operation(P, fit_vals)
+            offspring_i += crossover_operation(P, fit_vals)
+        offspring = list(set(offspring_i+offspring))  # Delete repeated offspring
+
     return offspring
 
 
@@ -129,40 +133,38 @@ def evaluate_process(P, pi, R, cores, phases):
     while i < len(P):
         R[i] = ev.evaluate(P[i], P[i].get_start(), phases=phases)
 
-        # Measure real CPU time
-        from source.iotnets.main_run_chain import chain_inference_time
-        
-        classifiers_chain = [utils.get_classifier_index(P[i], 0)] * 3
-        ths = [0, 0]
+        # Measure real CPU times
+        if args.device == 'cpu':
+            from source.iotnets.main_run_chain import chain_inference_time
 
-        if len(P[i].get_message().classifier) > 1:
-            c_id = utils.get_classifier_index(P[i], 1)
-            t_id = P[i].get(classifiers_chain[0]).component_id
-            classifiers_chain[1] = c_id
-            ths[0] = float(t_id.split("_")[2])
-            
+            classifiers_chain = [utils.get_classifier_index(P[i], 0)] * 3
+            ths = [0, 0]
 
-        if len(P[i].get_message().classifier) > 2:
-            c_id = utils.get_classifier_index(P[i], 2)
-            t_id = P[i].get(classifiers_chain[1]).component_id
-            classifiers_chain[2] = c_id
-            ths[1] = float(t_id.split("_")[2])
+            if len(P[i].get_message().classifier) > 1:
+                c_id = utils.get_classifier_index(P[i], 1)
+                t_id = P[i].get(classifiers_chain[0]).component_id
+                classifiers_chain[1] = c_id
+                ths[0] = float(t_id.split("_")[2])
 
-        update = R[i]
-        if 'val' in phases:
-            update.val['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='val')
-        if 'test' in phases:
-            update.test['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='test')
-        R[i] = update
+
+            if len(P[i].get_message().classifier) > 2:
+                c_id = utils.get_classifier_index(P[i], 2)
+                t_id = P[i].get(classifiers_chain[1]).component_id
+                classifiers_chain[2] = c_id
+                ths[1] = float(t_id.split("_")[2])
+
+            update = R[i]
+            if 'val' in phases:
+                update.val['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='val')
+            if 'test' in phases:
+                update.test['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='test')
+            R[i] = update
 
         i += cores
 
 
 def evaluate_population(P, phases=['test','val']):
-    """
-    :param P: Population
-    :return:
-    """
+
     R = [ev.Results]*len(P)
     if args.parallel:
         from multiprocessing import Process, Manager
@@ -177,6 +179,7 @@ def evaluate_population(P, phases=['test','val']):
     else:
         for i, p in enumerate(P):
             R[i] = ev.evaluate(p, p.get_start(), phases=phases)
+
     return R
 
 

@@ -7,7 +7,13 @@ figures/
 .idea/
 tmp/
 papers/
-iotnets/
+iotnets/.idea/
+iotnets/configs/
+iotnets/IoTmodels/
+iotnets/networks/
+iotnets/results/
+iotnets/README.md
+
 
 # File types
 *.pkl

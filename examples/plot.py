@@ -80,7 +80,7 @@ def plot_accuracy_time(record, system_color='green', label=None):
 
 
 
-def plot_accuracy_time_old(record, system_color='green', label=None):
+def plot_accuracy_time_old(record, system_color='green', label=None, s=2):
     plt.title("CIFAR-10 test set evaluation")
     plt.xlabel("Seconds")
     plt.ylabel("Accuracy")
@@ -88,14 +88,14 @@ def plot_accuracy_time_old(record, system_color='green', label=None):
     system_keys = [key for key in record.keys() if len(record[key].test) > 2]
     ref_keys = [key for key in record.keys() if key not in system_keys]
 
-
     X = [record[key].test['system'].time for key in system_keys]
     Y = [record[key].test['system'].accuracy for key in system_keys]
-    plt.scatter(X, Y, color=system_color, s=2, alpha=1, label=label)
+    plt.scatter(X, Y, color=system_color, s=s, alpha=1, label=label)
 
     X = [record[key].test['system'].time for key in ref_keys]
     Y = [record[key].test['system'].accuracy for key in ref_keys]
     plt.scatter(X, Y, color='red', s=20, alpha=1, label=label)
+
 
 
 def plot_accuracy_parameters_old(record, system_color="green", label=None):
