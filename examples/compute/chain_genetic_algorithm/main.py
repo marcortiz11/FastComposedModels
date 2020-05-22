@@ -115,17 +115,18 @@ def generate_offspring(P, fit_vals, o=None):
     if o is None:
         o = args.offspring
 
-    offspring = []
-    while len(offspring) < o:
+    # Dictionary to avoid repeated offspring
+    offspring_dict = {}
+    while len(offspring_dict) < o:
         r = random.random()
-        offspring_i = []
         if args.pm > r:
-            offspring_i += mutation_operation(P, fit_vals)
+            for offspring in mutation_operation(P, fit_vals):
+                offspring_dict[offspring.get_sysid()] = offspring
         if args.pc > r:
-            offspring_i += crossover_operation(P, fit_vals)
-        offspring = list(set(offspring_i+offspring))  # Delete repeated offspring
+            for offspring in crossover_operation(P, fit_vals):
+                offspring_dict[offspring.get_sysid()] = offspring
 
-    return offspring
+    return [offspring for key, offspring in offspring_dict.items()]
 
 
 def evaluate_process(P, pi, R, cores, phases):
@@ -133,39 +134,38 @@ def evaluate_process(P, pi, R, cores, phases):
     while i < len(P):
         R[i] = ev.evaluate(P[i], P[i].get_start(), phases=phases)
 
-        # Measure real CPU times
-        if args.device == 'cpu':
-            from source.iotnets.main_run_chain import chain_inference_time
+        from source.iotnets.main_run_chain import chain_inference_time
 
-            classifiers_chain = [utils.get_classifier_index(P[i], 0)] * 3
-            ths = [0, 0]
+        classifiers_chain = [utils.get_classifier_index(P[i], 0)] * 3
+        ths = [0, 0]
 
-            if len(P[i].get_message().classifier) > 1:
-                c_id = utils.get_classifier_index(P[i], 1)
-                t_id = P[i].get(classifiers_chain[0]).component_id
-                classifiers_chain[1] = c_id
-                ths[0] = float(t_id.split("_")[2])
+        if len(P[i].get_message().classifier) > 1:
+            c_id = utils.get_classifier_index(P[i], 1)
+            t_id = P[i].get(classifiers_chain[0]).component_id
+            classifiers_chain[1] = c_id
+            ths[0] = float(t_id.split("_")[2])
 
 
-            if len(P[i].get_message().classifier) > 2:
-                c_id = utils.get_classifier_index(P[i], 2)
-                t_id = P[i].get(classifiers_chain[1]).component_id
-                classifiers_chain[2] = c_id
-                ths[1] = float(t_id.split("_")[2])
+        if len(P[i].get_message().classifier) > 2:
+            c_id = utils.get_classifier_index(P[i], 2)
+            t_id = P[i].get(classifiers_chain[1]).component_id
+            classifiers_chain[2] = c_id
+            ths[1] = float(t_id.split("_")[2])
 
-            update = R[i]
-            if 'val' in phases:
-                update.val['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='val')
-            if 'test' in phases:
-                update.test['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='test')
-            R[i] = update
+        update = R[i]
+        if 'val' in phases:
+            update.val['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='val')
+        if 'test' in phases:
+            update.test['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128, phase='test')
+        R[i] = update
 
         i += cores
 
 
-def evaluate_population(P, phases=['test','val']):
+def evaluate_population(P, phases=['test', 'val']):
 
     R = [ev.Results]*len(P)
+
     if args.parallel:
         from multiprocessing import Process, Manager
         processes = []
@@ -179,6 +179,33 @@ def evaluate_population(P, phases=['test','val']):
     else:
         for i, p in enumerate(P):
             R[i] = ev.evaluate(p, p.get_start(), phases=phases)
+
+            if args.device == 'cpu':
+                from source.iotnets.main_run_chain import chain_inference_time
+
+                classifiers_chain = [utils.get_classifier_index(P[i], 0)] * 3
+                ths = [0, 0]
+
+                if len(P[i].get_message().classifier) > 1:
+                    c_id = utils.get_classifier_index(P[i], 1)
+                    t_id = P[i].get(classifiers_chain[0]).component_id
+                    classifiers_chain[1] = c_id
+                    ths[0] = float(t_id.split("_")[2])
+
+                if len(P[i].get_message().classifier) > 2:
+                    c_id = utils.get_classifier_index(P[i], 2)
+                    t_id = P[i].get(classifiers_chain[1]).component_id
+                    classifiers_chain[2] = c_id
+                    ths[1] = float(t_id.split("_")[2])
+
+                update = R[i]
+                if 'val' in phases:
+                    update.val['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128,
+                                                                     phase='val')
+                if 'test' in phases:
+                    update.test['system'].time = chain_inference_time(args.dataset, classifiers_chain, ths, bs=128,
+                                                                      phase='test')
+                R[i] = update
 
     return R
 
