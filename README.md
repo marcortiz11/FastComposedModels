@@ -1,5 +1,5 @@
-[![Generic badge](https://img.shields.io/github/license/marcortiz11/FastComposedModels)](https://shields.io/)
-[![Generic badge](https://img.shields.io/github/v/release/marcortiz11/FastComposedModels)](https://shields.io/)
+[![Generic badge](https://img.shields.io/github/license/marcortiz11/FastComposedModels)](https://opensource.org/licenses/MIT)
+[![Generic badge](https://img.shields.io/github/v/release/marcortiz11/FastComposedModels)](https://zenodo.org/badge/latestdoi/209519696)
 
 # FastComposedModels
 Framework that allows to build and evaluate efficiently ensemble methods for neural networks by considering the evaluation results
