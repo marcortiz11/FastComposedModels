@@ -1,19 +1,77 @@
 [![Generic badge](https://img.shields.io/github/license/marcortiz11/FastComposedModels)](https://opensource.org/licenses/MIT)
 [![Generic badge](https://img.shields.io/github/v/release/marcortiz11/FastComposedModels)](https://zenodo.org/badge/latestdoi/209519696)
 
-# FastComposedModels
-Framework that allows to build and evaluate efficiently ensemble methods for neural networks by considering the evaluation results
-of the network (logits, inference time, params, flops) in train and test in classification tasks.
+# Fast Composed Models
+**FCM (Fast Composing Models)** is a pure Python framework designed to efficiently build and evaluate ensembles of **trained**
+machine learning (ML) models. The framework will support a wide spectrum of ensemble techniques. 
+Currently FCM supports [bagging](https://en.wikipedia.org/wiki/Bootstrap_aggregating), [boosting](https://web.stanford.edu/~hastie/Papers/samme.pdf) 
+and the chain ensemble described in our paper: _An scalable evolutionary-based approach for accelerating inference with DNN ensembles (2020)_.
+
+The way FCM is designed, makes it very interesting to apply in problems where the the user can generate/has a number
+of initial candidate ML solutions to the problem.  The pool can be composed by heterogeneous ML models.  The framework allows the user to test at high rate ensembles  to potentially generate an improved combined solution.
+Due to the large number of ensembles that can result from the combination of the initial solution set, FCM adopts a **cheap representation for the ML models**. With the cheap representation we don't need to perform inference
+on the actual model, which is costly in DNN. 
+
+Finally, this **repository also contains a genetic algorithm we call EARN**. EARN is built on top of the FCM framework 
+so that (guided by a fitting function),  reduces the number of ensemble combinations to perform while still finding 
+close-to-optimal ensembles.
+
+The following sections provide explanations and examples on how to build an ensemble with FCM, how to evaluate it and 
+how to load ML classifiers.
+
+
+## The components of an Ensemble
+
+#### The Classifier
+A basic component of the ensemble is a classifier. Any kind of ML model that given an input maps it to a label.
+As stated previously, we benefit from a cheaper and handier representation of the ML solutions to accelerate the
+evaluation and building of ensembles. Beneath there is the representation of a classifier:
+
+- Pre-computed predictions for each input sample of the dataset
+    - Train
+        - NxC Numpy ndarray. N=number of train samples; C=number of labels
+    - Test
+        - NxC Numpy ndarray.
+    - Validation
+        - NxC Numpy ndarray.
+- Performance information:
+    - Expected inference time 
+        - batch_size
+        - min/max/avg
+    - Number of parameters
+    - Number of operations during prediction
+
+The function ``make_classifier()`` in source/make_utils.py, returns a python dictionary with the above structure. 
+The user just has to save the dictionary, and reference it later when adding it to an ensemble.
+
+#### The Trigger
+
+The trigger is a component in the ensemble that aims to select the optimal ML model (classifier) for each input. The
+trigger can be  ML model or an analytical model. Unlike the classifier, the behaviour of the Trigger is implemented on
+a python script file. Please look at the 
+
+The behaviour of a trigger is defined as a python script file that implements the method *train_fit()*. All the information to control the behaviour of the trigger definition, needs to be stored
+together in the form of the dataset (Data component in the DAG). Datasets are stored in the folder Data. The method *train_fit()* trains a trigger, and performs inference over the input; This is selecting which classifier to activate.
+The method then returns a classifier definition (previous section), saying which classifier needs to be triggered for each input,
+and what is the inference time of the trigger, the number of parameters and the number of operations.
+ 
+An example of trigger definition can be seen in *Definitions/Triggers/probability.py*. 
+
+*Tests/test_train_trigger_automatically.py* provides an example of how a trigger is defined in the 
+framework, how is added to the graph, how is trained automatically and how to interpret the results 
+
+
 
 ## Design of ensemble methods
 The ensemble of NNs in the framework translates into the definition, building and evaluation of a DAG; 
 The definition of the graph with its available components/nodes and constraints
-are specified in a .proto definition found in *Source/FastComposedModels.proto*.  
-The code that builds the DAG can be found in *Source/system_builder*.  
-The code that builds the components of the graph is located in *Source/make_util*.
+are specified in a .proto definition found in *source/FastComposedModels.proto*. 
+The code that builds the DAG can be found in *source/system_builder*.  
+The code that builds the components of the graph is located in *source/make_util*.
 The code that evaluates the DAG and therefore, the ensemble performance on an evaluation set 
-can be found in *Source/system_evaluator*.
+can be found in *source/system_evaluator*.
   
+#### Components of the Ensemble
 The available components of the graph are:
 *  **Classifier**: Classifier nodes receive a set of input ids. Input ids reference inputs on the evaluation set.
 The node then returns the predictions (logits, label) for the inputs. Nodes point Classifiers to predict a subset of the test/evaluation set. 
@@ -27,6 +85,7 @@ If trigger is not trained, the evaluation
 part of the framework will train the trigger according to the trigger definition.
 *  **Data**: Provides meta-information on the dataset the ensemble method is trying to solve. 
 
+##### Bagging 3 classifiers
 
 ## Evaluation 
 Code for evaluation located in *Source/system_evaluator.py*.
@@ -60,38 +119,6 @@ in the ensemble for the **subset** of the input predicted by them.
 
 ****Please look at Source/system_evaluator.py for more details**
 
-## Defining Classifiers
-In order to perform a fast evaluation on the ensemble methods, the framework considers the performance
-of the classifiers over a dataset, along with the inference time, #param and #ops measurements of the classifier. 
-The classifier is defined as a dictionary with the following information:
-
-- Matrix of logits NxC (N=samples in the evaluation set, C=Number of classes)
-- Vector of ground truths N (N=samples in the evaluation set)
-- Vector of ids N (N=samples in the evaluation set), linking entries of the logit matrix to the ground truth and
-identifying the samples. Vector of ids is crucial, some classifiers may be trained with a subset of the dataset, therefore it is important to identify
-which are those inputs.
-- Time measurements: List of inference times. Each time measurement corresponds to performing inference with
-128 input instances.
-- Number of params
-- FLOPS
-
-The previous information is saved as a dict and stored as a pickle in *Definitions/Classifiers*. 
-A classifier node in the DAG, needs to point to the pickle file for the evaluation part. To build the
-dict look at the code *Source/make_utils.py*.
-
-
-## Defining Triggers
-
-The behaviour of a trigger is defined as a python script file that implements the method *train_fit()*. All the information to control the behaviour of the trigger definition, needs to be stored
-together in the form of the dataset (Data component in the DAG). Datasets are stored in the folder Data. The method *train_fit()* trains a trigger, and performs inference over the input; This is selecting which classifier to activate.
-The method then returns a classifier definition (previous section), saying which classifier needs to be triggered for each input,
-and what is the inference time of the trigger, the number of parameters and the number of operations.
- 
-An example of trigger definition can be seen in *Definitions/Triggers/probability.py*. 
-
-### Example defining triggers
-*Tests/test_train_trigger_automatically.py* provides an example of how a trigger is defined in the 
-framework, how is added to the graph, how is trained automatically and how to interpret the results 
 
 ## Simple examples for using the framework
 In *SimpleSamples/** you can find simple examples
