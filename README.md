@@ -1,3 +1,6 @@
+[![Generic badge](https://img.shields.io/github/license/marcortiz11/FastComposedModels)](https://shields.io/)
+[![Generic badge](https://img.shields.io/github/v/release/marcortiz11/FastComposedModels)](https://shields.io/)
+
 # FastComposedModels
 Framework that allows to build and evaluate efficiently ensemble methods for neural networks by considering the evaluation results
 of the network (logits, inference time, params, flops) in train and test in classification tasks.
