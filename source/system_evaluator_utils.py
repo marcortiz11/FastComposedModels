@@ -42,6 +42,7 @@ def train_trigger(sys, c):
     :param c: Trigger protobuf definition
     :return: -
     """
+
     assert c.HasField("classifier"), "ERROR in TRIGGER.CLASSIFIER: A classifier should be specified for the trigger"
     train_trigger = not c.classifier.HasField("classifier_file") or c.classifier.classifier_file == ""
     if train_trigger:
@@ -50,7 +51,8 @@ def train_trigger(sys, c):
         assert c.classifier.HasField("data_id"), \
             "ERROR in TRIGGER.CLASSIFIER: Training data should be specified when training the trigger"
 
-        module = importlib.import_module('.'+c.model, package='definitions.Triggers')
+        module_name = '.'+c.model
+        module = importlib.import_module(module_name, package='definitions.triggers')
         c_dict = module.train_fit(sys, c.id)
         if 'TMP' in os.environ:
             tmp_location = os.path.join(os.environ['FCM'], os.environ['TMP']+'/')

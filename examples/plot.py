@@ -79,9 +79,15 @@ def plot_accuracy_time(record, system_color='green', label=None):
     plt.scatter(X, Y, color='red', s=50, alpha=1, label=label)
 
 
+def plot_accuracy_parameters_time(record, title):
+    plt.subplot(1, 2, 1)
+    plot_accuracy_time_old(record, title)
+    plt.subplot(1, 2, 2)
+    plot_accuracy_parameters_old(record, title)
 
-def plot_accuracy_time_old(record, system_color='green', label=None, s=2):
-    plt.title("CIFAR-10 test set evaluation")
+
+def plot_accuracy_time_old(record, title, system_color='blue', label=None, s=2):
+    plt.title(title)
     plt.xlabel("Seconds")
     plt.ylabel("Accuracy")
 
@@ -97,33 +103,22 @@ def plot_accuracy_time_old(record, system_color='green', label=None, s=2):
     plt.scatter(X, Y, color='red', s=20, alpha=1, label=label)
 
 
-
-def plot_accuracy_parameters_old(record, system_color="green", label=None):
-    plt.title("CIFAR-10 test set evaluation")
+def plot_accuracy_parameters_old(record, title, system_color="blue", label=None):
+    plt.title(title)
     plt.xlabel("# Parameters")
     plt.ylabel("Accuracy")
     plt.xscale("log")
 
-    system_keys = [key for key in record.keys() if 'system' in key]
-    pair_keys = [key for key in record.keys() if ';' in key]
-    modified_keys = [key for key in record.keys() if 'modified' in key and 'system' not in key and ';' not in key]
-    ref_keys = [key for key in record.keys() if 'modified' not in key and 'system' not in key and ';' not in key]
+    system_keys = [key for key in record.keys() if len(record[key].test) > 2]
+    ref_keys = [key for key in record.keys() if key not in system_keys]
 
-    X = [record[key]['system'].params for key in system_keys]
-    Y = [record[key]['system'].accuracy for key in system_keys]
-    plt.scatter(X, Y, color=system_color, s=5, alpha=1, label=label)
+    X = [record[key].test['system'].params for key in system_keys]
+    Y = [record[key].test['system'].accuracy for key in system_keys]
+    plt.scatter(X, Y, color=system_color, s=1, alpha=1, label=label)
 
-    X = [record[key]['system'].params for key in pair_keys]
-    Y = [record[key]['system'].accuracy for key in pair_keys]
-    plt.scatter(X, Y, color=system_color, s=5, alpha=1)
-
-    X = [record[key].params for key in modified_keys]
-    Y = [record[key].accuracy for key in modified_keys]
-    plt.scatter(X, Y, color='red', s=30, alpha=1)
-
-    X = [record[key].params for key in ref_keys]
-    Y = [record[key].accuracy for key in ref_keys]
-    plt.scatter(X, Y, color='red', s=30)
+    X = [record[key].test['system'].params for key in ref_keys]
+    Y = [record[key].test['system'].accuracy for key in ref_keys]
+    plt.scatter(X, Y, color='red', s=20)
 
 
 def show():

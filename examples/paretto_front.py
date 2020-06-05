@@ -23,6 +23,17 @@ def sort_results_by_time(R, phase=""):
         return sorted(R.items(), key=lambda item: item[1]['system'].time)
 
 
+def sort_results_by_ops(R, phase=""):
+    if phase == "train":
+        return sorted(R.items(), key=lambda item: item[1].train['system'].ops)
+    elif phase == "test":
+        return sorted(R.items(), key=lambda item: item[1].test['system'].ops)
+    elif phase == "val":
+        return sorted(R.items(), key=lambda item: item[1].val['system'].ops)
+    else:
+        return sorted(R.items(), key=lambda item: item[1]['system'].ops)
+
+
 def sort_results_by_accuracy(R, phase=""):
     if phase == "train":
         return sorted(R.items(), key=lambda item: item[1].train['system'].accuracy)
@@ -70,27 +81,23 @@ def get_front_time_accuracy(R, phase=""):
     return dict(paretto_models)
 
 
-def get_front_accuracy_time(R):
-    sorted_R = sorted(R.items(), key=lambda item: item[1].accuracy)
+def get_front_ops_accuracy(R, phase=""):
+    sorted_R = sort_results_by_ops(R, phase)
     paretto_models = []
-    max = 0
+    max_acc = 0
     for key, value in sorted_R:
-        if value.time > max:
+        if phase == "train":
+            accuracy = value.train['system'].accuracy
+        elif phase == "test":
+            accuracy = value.test['system'].accuracy
+        elif phase == "val":
+            accuracy = value.val['system'].accuracy
+        else: accuracy = value['system'].accuracy
+        if accuracy > max_acc:
             paretto_models.append((key, value))
-            max = value.time
+            max_acc = accuracy
     return dict(paretto_models)
 
-
-def get_front_accuracy_params(R):
-    sorted_R = sorted(R.items(), key=lambda item: item[1].accuracy if "system" not in item[0] else item[1]['system'].accuracy)
-    paretto_models = []
-    max = 0
-    for key, value in sorted_R:
-        params = value.params if "system" not in key else value['system'].params
-        if params > max:
-            paretto_models.append((key, value))
-            max = params
-    return dict(paretto_models)
 
 
 def get_speedup_id(f0, f1, e, phase = None):

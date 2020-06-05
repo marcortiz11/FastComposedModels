@@ -6,8 +6,8 @@ import os
 
 if __name__ == "__main__":
 
-    dataset = "sota_models_caltech256-32-dev_validation"
-    GA_ids = ["8436913852312834", "5322753737898232", "9311417823719622"]
+    dataset = "sota_models_cifar10-32-dev_validation"
+    GA_ids = ["9749948385619311"]
 
     # 0) Single DNNs
     models = io.read_pickle(os.path.join(os.environ['FCM'], 'small_examples', 'models_evaluation', dataset, 'models.pkl'))
