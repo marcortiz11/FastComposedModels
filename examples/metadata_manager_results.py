@@ -115,7 +115,7 @@ def get_results_by_id(meta_file, id):
         meta_dataset = json.load(file)
         for entry in meta_dataset:
             if entry['id'] == id:
-                return os.path.join(os.environ['FCM'], entry['results'], 'results_ensembles.pkl')
+                return os.path.join(os.environ['FCM'], entry['results'])
     return None
 
 
@@ -137,7 +137,7 @@ def get_results_by_params(meta_file, param):
                     valid = False
                     break
             if valid:
-                result_locations += [os.path.join(os.environ['FCM'], entry['results'], 'results_ensembles.pkl')]
+                result_locations += [os.path.join(os.environ['FCM'], entry['results'])]
     return result_locations
 
 
@@ -153,7 +153,7 @@ def get_ensembles_by_id(meta_file, id):
         meta_dataset = json.load(file)
         for entry in meta_dataset:
             if entry['id'] == id:
-                return os.path.join(os.environ['FCM'], entry['results'], 'ensembles.pkl')
+                return os.path.join(os.environ['FCM'], entry['results'])
     return None
 
 

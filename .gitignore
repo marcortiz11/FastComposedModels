@@ -1,18 +1,14 @@
 # Folders
 data/
-definitions/
+definitions/Classifiers
+definitions/checkpoints
 results/
 figs/
 figures/
 .idea/
 tmp/
 papers/
-iotnets/.idea/
-iotnets/configs/
-iotnets/IoTmodels/
-iotnets/networks/
-iotnets/results/
-iotnets/README.md
+iotnets/
 
 
 # File types

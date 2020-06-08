@@ -2,12 +2,13 @@ import examples.compute.chain_genetic_algorithm.main as main
 import examples.metadata_manager_results as manager_results
 import source.genetic_algorithm.selection as selection
 import source.genetic_algorithm.fitting_functions as fit_fun
+import source.io_util as io
 from mpi4py import MPI
 import numpy as np
 import sys, random, os, time
 
 
-def save_results(R_dict):
+def save_results(R_dict, R_list):
     meta_data_file = os.path.join(os.environ['FCM'],
                                   'examples',
                                   'compute',
@@ -21,7 +22,10 @@ def save_results(R_dict):
     meta_data_result = manager_results.metadata_template(id, main.args.dataset, results_loc, comments)
 
     params = main.args.__dict__
+    # Save dictionary of ensemble results
     manager_results.save_results(meta_data_file, meta_data_result, params, R_dict)
+    # Additionally save ensemble results per generation (list)
+    io.save_pickle(os.path.join(results_loc, 'results_ensemble_per_generation.pkl'), R_list)
 
 
 def multinode_earn(comm):
@@ -29,6 +33,7 @@ def multinode_earn(comm):
     s = comm.Get_size()
 
     P = P_fit = R_dict = None
+    R_list = []
 
     if r == 0:
         P = main.generate_initial_population()
@@ -86,14 +91,18 @@ def multinode_earn(comm):
             R = [R_generation[i] for i in best]
             P_fit = [fit_generation[i] for i in best]
 
+            # Save generation individuals
             for i, p in enumerate(P):
                 R_dict[p.get_sysid()] = R[i]
+
+            # Also save per-generation individuals
+            R_list += R
             
             print("Iteration %d" % epoch)
             print("TIME: Seconds per generation: %f " % (time.time() - start))
 
     if r == 0:
-        save_results(R_dict)
+        save_results(R_dict, R_list)
 
 
 if __name__ == "__main__":
