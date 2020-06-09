@@ -1,7 +1,7 @@
-import source.system_builder as sb
-import source.system_evaluator as eval
-import source.make_util as make
-import source.io_util as io
+import Source.system_builder as sb
+import Source.system_evaluator as eval
+import Source.make_util as make
+import Source.io_util as io
 import numpy as np
 
 
@@ -48,8 +48,8 @@ def build_train_trigger(model1_dict, th):
 
 if __name__ == "__main__":
 
-    small_cfile = "../definitions/Classifiers/V001_DenseNet_s1_39"
-    big_cfile = "../definitions/Classifiers/V001_DenseNet_s1_80"
+    small_cfile = "../Definitions/Classifiers/V001_DenseNet_s1_39"
+    big_cfile = "../Definitions/Classifiers/V001_DenseNet_s1_80"
     c_dict_big = io.read_pickle(big_cfile)
     c_dict_small = io.read_pickle(small_cfile)
     th = 1.1
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     # Test that times are consistent
     classifier, evaluation = sys.build_classifier_dict("built", "small")
-    import source.system_evaluator_utils as eval_utils
+    import Source.system_evaluator_utils as eval_utils
     eval_utils.pretty_print(evaluation)
 
     # assert (classifier['test']['time_instance'] == (c_dict_small['metrics']['time'] + c_dict_big['metrics']['time']/128.0)).all()

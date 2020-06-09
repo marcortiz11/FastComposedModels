@@ -1,7 +1,7 @@
-import source.make_util as make
-import source.system_evaluator as eval
-import source.system_builder_serializable as sb
-import source.io_util as io
+import Source.make_util as make
+import Source.system_evaluator as eval
+import Source.system_builder_serializable as sb
+import Source.io_util as io
 import os
 
 
@@ -19,7 +19,7 @@ def update_dataset(model_file, ths, train_path, test_path):
 
 if __name__ == "__main__":
 
-    data_path = "../data/"
+    data_path = "../Data/"
 
     # Create skeleton
     sys = sb.SystemBuilder(verbose=False)
@@ -27,9 +27,9 @@ if __name__ == "__main__":
     trigger0_test_dataset = os.path.join(data_path, "test_trigger0")
     trigger1_train_dataset = os.path.join(data_path, "train_trigger1")
     trigger1_test_dataset = os.path.join(data_path, "test_trigger1")
-    c0_file = "../definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_VGG13_ref_0.pkl"
-    c1_file = "../definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_ResNet34_ref_0.pkl"
-    c2_file = "../definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_DenseNet121_ref_0.pkl"
+    c0_file = "../Definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_VGG13_ref_0.pkl"
+    c1_file = "../Definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_ResNet34_ref_0.pkl"
+    c2_file = "../Definitions/Classifiers/sota_models_gtsrb-32-dev_validation/V001_DenseNet121_ref_0.pkl"
 
     # Classifier/Trigger 0
     c0 = make.make_classifier("c0", c0_file, component_id="trigger0")
@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
     # Test 5 -> Incrementing the threshold on a fully connected chain
     import numpy as np
-    import examples.plot as plt
+    import Examples.plot as plt
 
     R = {}
     for th in np.arange(0, 1.1, 0.1):

@@ -1,7 +1,7 @@
 import numpy as np
-import source.system_builder as sb
-import source.make_util as make
-import source.system_evaluator as eval
+import Source.system_builder as sb
+import Source.make_util as make
+import Source.system_evaluator as eval
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import time
@@ -73,7 +73,7 @@ def plot_accuracy_dataset(record, dataset):
 if __name__ == "__main__":
     # Get the CIFAR-100 models form the Classifiers dir
     import os
-    Dataset_Path = "../definitions/Classifiers/"
+    Dataset_Path = "../Definitions/Classifiers/"
     dsets = ["front45_models_validation",
              "sota_models_cifar100-32-dev_validation",
              "sota_models_cifar10-32-dev_validation",
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
             records[m_] = results
 
-        import source.io_util as io
+        import Source.io_util as io
         if not os.path.exists('./models_evaluation/%s' % d):
             os.makedirs('./models_evaluation/%s' % d)
         io.save_pickle('./models_evaluation/%s/models.pkl' % d, records)

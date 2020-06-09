@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
-import source.io_util as io
-import source.make_util as make
+import Source.io_util as io
+import Source.make_util as make
 import time
 
 n_entries = int(1e6)

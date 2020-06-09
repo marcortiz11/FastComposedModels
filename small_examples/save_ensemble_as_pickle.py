@@ -1,12 +1,12 @@
-import source.system_builder_serializable as sb
-import source.make_util as make
-import source.io_util as io
+import Source.system_builder_serializable as sb
+import Source.make_util as make
+import Source.io_util as io
 import os
 
 if __name__ == "__main__":
 
     dset = "sota_models_cifar10-32-dev_validation"
-    Classifier_Path = os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', dset)
+    Classifier_Path = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', dset)
 
     P = []
     models = [f for f in os.listdir(Classifier_Path)]

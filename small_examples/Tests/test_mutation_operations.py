@@ -1,8 +1,8 @@
 import unittest
-import source.make_util as make
-import source.system_builder as sb
-import source.system_evaluator as eval
-import source.io_util as io
+import Source.make_util as make
+import Source.system_builder as sb
+import Source.system_evaluator as eval
+import Source.io_util as io
 import os
 
 def update_dataset(c_file, train_path, test_path, val_path, th):
@@ -24,13 +24,13 @@ def update_dataset(c_file, train_path, test_path, val_path, th):
 
 if __name__ == '__main__':
 
-    c0_file = os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'front45_models_validation',
+    c0_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'front45_models_validation',
                            'V001_DenseNet_s3_71')
-    c1_file = os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'front45_models_validation',
+    c1_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'front45_models_validation',
                            'V001_DenseNet_s1_3')
-    c2_file = os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'front45_models_validation',
+    c2_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'front45_models_validation',
                            'V001_DenseNet_s2_32.pkl')
-    data_path = os.path.join(os.environ['FCM'], 'data')
+    data_path = os.path.join(os.environ['FCM'], 'Data')
 
     # ENSEMBLE SKELETON
     sys = sb.SystemBuilder(verbose=False, id="1")
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     #----------------------------------------------
 
     # Test 1:  update in threshold
-    import source.genetic_algorithm.operations_mutation as om
+    import Source.genetic_algorithm.operations_mutation as om
     sys_ = sys.copy()
     sys_.set_sysid("2")
     om.update_threshold(sys_, "c0", 1)  # Now all instances go to c1, acc = acc(c1)
@@ -93,12 +93,12 @@ if __name__ == '__main__':
     P = [sys, sys_, sys__, sys_3, sys_4]
 
     # Check fitting function works
-    import source.genetic_algorithm.fitting_functions as fit_func
+    import Source.genetic_algorithm.fitting_functions as fit_func
     fit = fit_func.f1_time_penalization(P, b=2, time_constraint=4)
     print(fit)
 
     # Check selection works
-    import source.genetic_algorithm.selection as selection
+    import Source.genetic_algorithm.selection as selection
     next_indices = selection.rank_selection(fit, 2)
     print(next_indices)
 

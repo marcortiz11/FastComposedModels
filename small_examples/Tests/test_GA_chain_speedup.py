@@ -1,8 +1,8 @@
-import source.io_util as io
-import source.make_util as make
-import source.system_builder_serializable as sb
-import source.system_evaluator as se
-import examples.metadata_manager_results as results_manager
+import Source.io_util as io
+import Source.make_util as make
+import Source.system_builder_serializable as sb
+import Source.system_evaluator as se
+import Examples.metadata_manager_results as results_manager
 import os
 
 
@@ -31,7 +31,7 @@ def build_chain(classifiers, id_classifiers, thresholds, id_triggers, data_id):
     assert len(id_triggers) == len(thresholds), "ERROR: Each trigger should be assigned a threshold"
     assert len(classifiers) == len(id_classifiers), "ERROR: Each classifier file should be assigned a classifier id"
 
-    data_path = os.path.join(os.environ['FCM'], 'data', data_id)
+    data_path = os.path.join(os.environ['FCM'], 'Data', data_id)
 
     if not os.path.exists(data_path):
         os.makedirs(data_path)
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     id_fastest = "__trigger_classifier_0.10000000000000003_V001_VGG13_ref_0____trigger_classifier_0" \
                  ".4_V001_ResNeXt29_32x4d_ref_0__V001_VGG11_ref_0"
 
-    experiment_dir = os.path.join(os.environ['FCM'], 'examples', 'compute', 'chain_genetic_algorithm')
+    experiment_dir = os.path.join(os.environ['FCM'], 'Examples', 'compute', 'chain_genetic_algorithm')
     metadata_file = os.path.join(experiment_dir, 'results', 'metadata.json')
 
     id = "7062152700584889"
@@ -83,9 +83,9 @@ if __name__ == "__main__":
     time_result = fastest.test['system'].time
 
     # Build same ensemble
-    classifiers = [os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'sota_models_stl10-32-dev_validation', 'V001_VGG13_ref_0'),
-                   os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'sota_models_stl10-32-dev_validation', 'V001_ResNeXt29_32x4d_ref_0'),
-                   os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'sota_models_stl10-32-dev_validation', 'V001_VGG11_ref_0')
+    classifiers = [os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'sota_models_stl10-32-dev_validation', 'V001_VGG13_ref_0'),
+                   os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'sota_models_stl10-32-dev_validation', 'V001_ResNeXt29_32x4d_ref_0'),
+                   os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'sota_models_stl10-32-dev_validation', 'V001_VGG11_ref_0')
                    ]
     classifiers_id = ['V001_VGG13_ref_0',
                       'V001_ResNeXt29_32x4d_ref_0',

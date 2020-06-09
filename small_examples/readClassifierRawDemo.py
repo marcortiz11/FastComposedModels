@@ -1,7 +1,7 @@
 import numpy as np
-import source.make_util as make_util
-import source.io_util as io_util
-import source.FastComposedModels_pb2 as fcm
+import Source.make_util as make_util
+import Source.io_util as io_util
+import Source.FastComposedModels_pb2 as fcm
 
 
 

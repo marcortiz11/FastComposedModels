@@ -1,8 +1,8 @@
-import source.system_builder as sb
-import source.make_util as make
-import source.io_util as io
-import source.system_evaluator as eval
-import source.FastComposedModels_pb2 as fcm
+import Source.system_builder as sb
+import Source.make_util as make
+import Source.io_util as io
+import Source.system_evaluator as eval
+import Source.FastComposedModels_pb2 as fcm
 import os
 
 
@@ -27,11 +27,11 @@ if __name__ == "__main__":
     # Dict with the results of the evaluations
     records = {}
     path = os.environ['FCM']
-    train_path = path+'/data/train_trigger_threshold.pkl'
-    test_path = path+'/data/test_trigger_threshold.pkl'
-    val_path = path+'/data/val_trigger_threshold.pkl'
-    small_cfile = "../definitions/Classifiers/front45_models_validation/V001_DenseNet_s1_39"
-    big_cfile = "../definitions/Classifiers/front45_models_validation/V001_DenseNet_s1_66"
+    train_path = path+'/Data/train_trigger_threshold.pkl'
+    test_path = path+'/Data/test_trigger_threshold.pkl'
+    val_path = path+'/Data/val_trigger_threshold.pkl'
+    small_cfile = "../Definitions/Classifiers/front45_models_validation/V001_DenseNet_s1_39"
+    big_cfile = "../Definitions/Classifiers/front45_models_validation/V001_DenseNet_s1_66"
 
     sys = sb.SystemBuilder(verbose=False)
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     sys.add_classifier(smallClassifier)
 
     chain_classifier, r = sys.build_classifier_dict("chain_classifier", "small", phases=["train", "val", "test"])
-    import source.system_evaluator_utils as eval_utils
+    import Source.system_evaluator_utils as eval_utils
     eval_utils.pretty_print(r)
     print(chain_classifier['test']['logits'].shape)
     print(chain_classifier['val']['logits'].shape)

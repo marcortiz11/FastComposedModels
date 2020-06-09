@@ -1,8 +1,8 @@
-import source.make_util as make
-import source.system_builder as sb
-import source.system_evaluator as eval
-import source.io_util as io
-import source.genetic_algorithm.operations_breed as ob
+import Source.make_util as make
+import Source.system_builder as sb
+import Source.system_evaluator as eval
+import Source.io_util as io
+import Source.genetic_algorithm.operations_breed as ob
 import os
 
 L = []
@@ -34,7 +34,7 @@ def build_chain(classifiers, id_classifiers, thresholds, id_triggers, data_id):
     assert len(id_triggers) == len(thresholds), "ERROR: Each trigger should be assigned a threshold"
     assert len(classifiers) == len(id_classifiers), "ERROR: Each classifier file should be assigned a classifier id"
 
-    data_path = os.path.join(os.environ['FCM'], 'data', data_id)
+    data_path = os.path.join(os.environ['FCM'], 'Data', data_id)
 
     if not os.path.exists(data_path):
         os.makedirs(data_path)
@@ -69,13 +69,13 @@ def build_chain(classifiers, id_classifiers, thresholds, id_triggers, data_id):
 
 if __name__ == '__main__':
 
-    c0_file = os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'front45_models_validation',
+    c0_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'front45_models_validation',
                            'V001_DenseNet_s3_71')
-    c1_file = os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'front45_models_validation',
+    c1_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'front45_models_validation',
                            'V001_DenseNet_s1_3')
-    c2_file = os.path.join(os.environ['FCM'], 'definitions', 'Classifiers', 'front45_models_validation',
+    c2_file = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'front45_models_validation',
                            'V001_DenseNet_s2_32')
-    data_path = os.path.join(os.environ['FCM'], 'data')
+    data_path = os.path.join(os.environ['FCM'], 'Data')
 
     # ENSEMBLE SKELETON
     chain0 = build_chain([c0_file, c1_file, c2_file],

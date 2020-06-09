@@ -1,12 +1,12 @@
-import source.make_util as make
-import source.system_builder as sb
-import source.system_evaluator as eval
-import source.io_util as io
+import Source.make_util as make
+import Source.system_builder as sb
+import Source.system_evaluator as eval
+import Source.io_util as io
 import numpy as np
 
 
 import os
-Classifier_Path = "../definitions/Classifiers/"
+Classifier_Path = "../Definitions/Classifiers/"
 models = [Classifier_Path+f for f in os.listdir(Classifier_Path) if ".pkl" in f][::10]
 
 
@@ -46,8 +46,8 @@ def build_train_trigger(model1_dict, th, name="trigger"):
     test = make.make_classifier_raw_data(logits_trigger, (pred_model1 == gt_model1), np.copy(model1_dict['test']['id']))
 
     classifier_trigger_dict = make.make_classifier_dict("trigger_classifier", "cifar10", train, test, performance)
-    io.save_pickle('../definitions/Triggers/Tmp/'+name, classifier_trigger_dict)
-    classifier = make.make_classifier("trigger_classifier", "../definitions/Triggers/Tmp/"+name)
+    io.save_pickle('../Definitions/Triggers/Tmp/'+name, classifier_trigger_dict)
+    classifier = make.make_classifier("trigger_classifier", "../Definitions/Triggers/Tmp/"+name)
     return classifier
 
 

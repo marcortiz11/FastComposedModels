@@ -1,5 +1,5 @@
 import numpy as np
-import source.io_util as io
+import Source.io_util as io
 import os
 import math
 
@@ -87,7 +87,7 @@ def weighted_max(Logits, w_models):
 if __name__ == "__main__":
 
     path = os.environ['PYTHONPATH']
-    Classifier_Path = path+"/definitions/Classifiers/"
+    Classifier_Path = path+"/Definitions/Classifiers/"
     models = [Classifier_Path + f for f in os.listdir(Classifier_Path) if ".pkl" in f]
 
     # Train info

@@ -1,6 +1,6 @@
 import numpy as np
-import source.make_util as make_util
-import source.io_util as io_util
+import Source.make_util as make_util
+import Source.io_util as io_util
 
 def get_dummy_ClassifierRawData(num_c=3, n=5):
     logits = np.random.rand(n,num_c)

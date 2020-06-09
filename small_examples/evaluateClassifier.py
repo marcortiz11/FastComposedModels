@@ -1,10 +1,10 @@
-import source.system_builder as sb
-import source.make_util as make
-import source.system_evaluator as eval
+import Source.system_builder as sb
+import Source.make_util as make
+import Source.system_evaluator as eval
 
 if __name__ == "__main__":
 
-    Classifier_Path = "../definitions/Classifiers/"
+    Classifier_Path = "../Definitions/Classifiers/"
     classifier_file = "DenseNet121_cifar10.pkl"
 
     # Creating system
