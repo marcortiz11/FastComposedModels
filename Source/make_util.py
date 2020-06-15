@@ -6,8 +6,8 @@ import numpy as np
 
 
 def make_source(train_path, test_path, format, val_path=None):
-    assert "/Data" in test_path or "\data" in test_path and \
-           "/Data" in train_path or "\data" in train_path,\
+    assert "/Data" in test_path or "\Data" in test_path and \
+           "/Data" in train_path or "\Data" in train_path,\
         "Datasets should be saved in the Data folder of the project."
     message = fcm.Data.Source(train_path=train_path, test_path=test_path, val_path=val_path, format=format)
     return message
@@ -99,11 +99,11 @@ def make_empty_trigger(id, component_ids):
     return message
 
 
-def make_merger(id, component_ids, merge_type=None):
+def make_merger(id, merged_ids, merge_type=None):
     message = fcm.Merger()
     message.id = id
-    for c in component_ids:
-        message.component_ids.append(c)
+    for c in merged_ids:
+        message.merged_ids.append(c)
     if merge_type is not None:
         message.merge_type = merge_type
     return message

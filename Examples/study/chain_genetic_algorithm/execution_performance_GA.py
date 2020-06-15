@@ -18,8 +18,8 @@ def fitness_evolution(individuals_fitness_generation, R):
         ids = generation[0]
         R_ids = [R[id] for id in ids]
         R_ids += [R[max_time_r], R[max_params_r]]
-        fit_ids = f1_time_param_penalization(R_ids, a=5, phase="validation")
-        fit += [(max(fit_ids), sum(fit_ids)/len(fit_ids), min(fit_ids))]
+        fit_ids = f1_time_param_penalization(R_ids, a=5, phase="val")
+        fit += [(max(fit_ids[:-2]), sum(fit_ids[:-2])/len(fit_ids[:-2]), min(fit_ids[:-2]))]
     return fit
 
 
@@ -39,8 +39,7 @@ def percentage_repeated_individuals(individuals_fitness_generation):
     generation = 1
     while generation < len(individuals_fitness_generation):
         id_current_gen = set(individuals_fitness_generation[generation][0])
-        id_previus_gen = set(individuals_fitness_generation[generation-1][0])
-        percentages.append(1 - len(id_current_gen.intersection(id_previus_gen))/len(id_current_gen.union(id_previus_gen)))
+        percentages.append(len(id_current_gen)/len(individuals_fitness_generation[generation][0]))
         generation += 1
     return percentages
 
@@ -54,6 +53,7 @@ def plot_fitness_evolution(individuals_fitness_generation, R):
     Y_min = [y[2] for y in Y]
 
     plt.figure()
+    plt.grid(True)
     plt.title("Evolution of the Fitness value")
     plt.xlabel("Generations")
     plt.ylabel("Validation Fitness Value")
@@ -69,9 +69,11 @@ def plot_offspring_replacement_evolution(individuals_fitness_generation):
     Y = percentage_replacement_offspring(individuals_fitness_generation)
 
     plt.figure()
+    plt.grid(True)
     plt.title("Offspring survival rate")
     plt.xlabel("Generations")
     plt.ylabel("Rate")
+    plt.ylim(bottom=0, top=1)
     plt.plot(X, Y)
     plt.show()
 
@@ -81,9 +83,11 @@ def plot_repeated_individuals_evolution(individuals_fitness_generation):
     Y = percentage_repeated_individuals(individuals_fitness_generation)
 
     plt.figure()
+    plt.grid(True)
     plt.title("Ratio unique individuals")
     plt.xlabel("Generations")
     plt.ylabel("Ratio")
+    plt.ylim(bottom=0, top=1)
     plt.plot(X, Y)
     plt.show()
 
@@ -91,7 +95,7 @@ def plot_repeated_individuals_evolution(individuals_fitness_generation):
 if __name__ == "__main__":
 
     experiment = 'chain_genetic_algorithm_multinode'
-    id = 3176850520651660
+    id = 9672911326659630
 
     # 1) G.A. Chain ensembles
     GA_results_metadata_file = os.path.join(os.environ['FCM'],

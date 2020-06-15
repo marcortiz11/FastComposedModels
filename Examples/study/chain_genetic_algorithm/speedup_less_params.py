@@ -25,15 +25,15 @@ def print_metrics_model(id, r):
 
 if __name__ == "__main__":
 
-    experiment = 'chain_genetic_algorithm'
+    experiment = 'chain_genetic_algorithm_multinode'
     query_params = {
         'dataset': "sota_models_caltech256-32-dev_validation",
-        'comment': 'Optimization_time_params',
+        'comment': 'Optimization_acc_realCPUtime_param',
         'selection': 'roulette',
         'iterations': 40,
-        'a': 10,
+        'a': 5,
     }
-    num = 5
+    num = 1
 
     sys.modules['Source'] = sys.modules['Source']
 
@@ -48,6 +48,7 @@ if __name__ == "__main__":
     # Get evaluation results from query
     GA_res_loc = results_manager.get_results_by_params(GA_results_metadata_file, query_params)
     GA_res_loc = GA_res_loc[-num:]
+    GA_res_loc = [os.path.join(path, 'results_ensembles.pkl') for path in GA_res_loc]
 
     # 2) Single Models
     models = dict([(k, r) for k, r in io.read_pickle(GA_res_loc[0]).items() if len(r.test) < 3])
@@ -76,7 +77,7 @@ if __name__ == "__main__":
         for id in sorted:
             speedup_chain_id = list_chain_keys[id]
             speedup_chain_result = GA_chains[speedup_chain_id]
-            if speedup_chain_result.test['system'].accuracy >= acc:
+            if speedup_chain_result.test['system'].accuracy > acc:
                 break
 
         print_metrics_model(speedup_chain_id, speedup_chain_result)

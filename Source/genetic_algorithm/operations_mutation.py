@@ -1,3 +1,4 @@
+import Source.FastComposedModels_pb2 as fcm
 import Source.make_util as make
 import Source.io_util as io
 import os
@@ -39,8 +40,11 @@ def __make_data_and_dataset(i, c_id, c_file, th):
 
     return data
 
-
+#################################################
 #   ---- VERSION 1: Find the best chain ----    #
+#################################################
+
+
 def extend_chain_pt(i, c_id, th=None, c_file = None, trigger_name=None):
 
     """
@@ -91,15 +95,15 @@ def replace_classifier(i, c_id, c_id_new, c_file = None, trigger_name=None):
     """
     Replaces a classifier in the chain for a new classifier
     :param i: Ensemble of models (system) representing an individual
-    :param c_id: Classifier to be replaced
-    :param c_id_new: Classifier that replaces
+    :param c_id: Classifier's id to be replaced
+    :param c_id_new: Classifier's id that replaces
     :return: A mutated individual, different classifier in the chain
     """
 
     c_file = c_id if c_file is None else c_file
     existing_classifier_id = [c.id for c in i.get_message().classifier]
 
-    if c_id not in existing_classifier_id:
+    if c_id_new not in existing_classifier_id:
         classifier = make.make_classifier(c_id_new, c_file)
         if i.get(c_id).component_id != '':
 
@@ -187,3 +191,66 @@ def update_threshold(i, c_id, step, trigger_name=None):
         i.replace(c_id, c)
 
 
+############################################################
+#   ---- VERSION 2: Bagging and Boosting of Chains ----    #
+############################################################
+
+def add_classifier_to_merger(i, merger_id, classifier_id, classifier_file):
+
+    # Add the new classifier to the system
+    classifier = make.make_classifier(classifier_id, classifier_file)
+    i.add_classifier(classifier)
+
+    # Extend the merger
+    merger = i.get(merger_id)
+    merger.merged_ids.append(classifier_id)
+    i.replace(merger_id, merger)
+
+
+def change_merging_protocol(i, merger_id, merge_protocol=fcm.Merger.AVERAGE):
+
+    # Change the merging protocol
+    merger = i.get(merger_id)
+    merger.merge_type = merge_protocol
+    i.replace(merger_id, merger)
+
+
+def extend_merged_chain(i, c_id_tail, c_id_new, th=None, c_file_new=None, t_id=None):
+
+    """
+
+    :param i: Individual
+    :param c_id_tail: Last classifier at the chain
+    :param c_id_new: Id of new last classifier at the chain
+    :param th: Threshold value of the new trigger
+    :param c_file_new: File location of the classifier at the chain
+    :param t_id: Id of the new trigger
+    :return:
+    """
+
+    th = 0.5 if th is None else th
+    c_file = c_id_tail if c_file_new is None else c_file_new
+    existing_classifier_id = [c.id for c in i.get_message().classifier]
+
+    if c_id_new not in existing_classifier_id:  # Add classifier if not present previously in the chain
+        if t_id is None:
+            t_id = "trigger_classifier_" + str(th) + "_" + c_id_tail
+        trigger_classifier_file = os.path.join(os.environ['FCM'], os.environ['TMP'], t_id+'.pkl')
+
+        if not os.path.exists(trigger_classifier_file):
+            data = __make_data_and_dataset(i, c_id_tail, i.get(c_id_tail).classifier_file, th)
+            i.add_data(data)
+            trigger = make.make_trigger(t_id, make.make_empty_classifier(id="", data_id=data.id), component_ids=[c_id_new], model="probability")
+        else:
+            trigger = make.make_trigger(t_id, make.make_classifier('', trigger_classifier_file), component_ids=[c_id_new])
+
+        i.add_trigger(trigger)
+
+        # Create new mutated classifier
+        classifier = make.make_classifier(c_id_new, c_file)
+        i.add_classifier(classifier)
+
+        # Update last classifier to connect to trigger
+        last_classifier = i.get(c_id_tail)
+        last_classifier.component_id = t_id
+        i.replace(c_id_tail, last_classifier)

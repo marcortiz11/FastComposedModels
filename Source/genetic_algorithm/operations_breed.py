@@ -4,7 +4,10 @@ import copy
 import os
 
 
-# ---- VERSION 1: Find the best chain ---- #
+#################################################
+#   ---- VERSION 1: Find the best chain ----    #
+#################################################
+
 def remove(a, point, first=True):
     """
     :param a: system
@@ -112,7 +115,6 @@ def singlepoint_crossover(a, b, pointA, pointB):
     assert a.get(pointA).DESCRIPTOR.name == "Classifier" and b.get(pointB).DESCRIPTOR.name == "Classifier", \
         "Crossover points A and B should point to Classifiers"
 
-
     offspring = []
 
     c1 = a.copy()
@@ -130,3 +132,56 @@ def singlepoint_crossover(a, b, pointA, pointB):
         offspring += [c2]
 
     return offspring
+
+
+############################################################
+#   ---- VERSION 2: Bagging and Boosting of Chains ----    #
+############################################################
+
+def merge_two_chains(a, b):
+    """
+    :param a: Chain of classifiers
+    :param b: Chain of classifiers
+    :return: Merged chains a and b
+    """
+    m_system = a.copy()
+
+    # 1) Get b protobuf structure
+    b_proto_mesage = b.get_message()
+
+    # 2) For each component (Trigger, Data, Classifier) add to m_system with different name
+    for classifier in b_proto_mesage.classifier:
+        classifier_ = copy.deepcopy(classifier)
+        classifier_.id = "1_"+classifier_.id
+        classifier_.component_id = classifier_.component_id if classifier_.component_id != "" else ""
+        classifier_.data_id = "1_" + classifier_.data_id if classifier_.data_id != "" else ""
+        m_system.add_classifier(classifier_)
+
+    for trigger in b_proto_mesage.trigger:
+        trigger_ = copy.deepcopy(trigger)
+        trigger_.id = trigger.id
+        for i in range(len(trigger_.component_ids)):
+            trigger_.component_ids[i] = "1_" + trigger_.component_ids[i]
+        m_system.add_trigger(trigger_)
+
+    for data in b_proto_mesage.data:
+        data_ = copy.deepcopy(data)
+        data_.id = "1_" + data.id
+        m_system.add_data(data_)
+
+    # 3) Finally add merger on m_system
+    import Examples.compute.chain_genetic_algorithm.utils as ga_utils
+    import Source.FastComposedModels_pb2 as fcm
+    merger = make.make_merger('Merger', [ga_utils.get_classifier_index(a, 0), "1_"+ga_utils.get_classifier_index(b, 0)],
+                              merge_type=fcm.Merger.AVERAGE)
+    m_system.set_start('Merger')
+    m_system.add_merger(merger)
+
+    return m_system
+
+
+
+
+
+
+

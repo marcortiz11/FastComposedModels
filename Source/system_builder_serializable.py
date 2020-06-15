@@ -53,13 +53,8 @@ class SystemBuilder:
 
 	def add_merger(self, merger):
 		self.__check_existence(merger)
-		assert len(merger.component_ids) > 1, \
+		assert len(merger.merged_ids) > 1, \
 			"ERROR in Merger" + merger.id + ": Merger should have at least two classifiers"
-		for id in merger.component_ids:
-			assert self.get(id) is not None, \
-				"ERROR in Merger: component with id " + id + " not in the system"
-			assert self.get(id).DESCRIPTOR.name == "Classifier", \
-				"ERROR in Merger: Merger should merge only classifiers"
 		system = self.__deserialize()
 		system.merger.extend([merger])
 		self.__serialize(system)
@@ -152,3 +147,4 @@ class SystemBuilder:
 	# Get system's id
 	def get_sysid(self):
 		return self.id
+

@@ -4,7 +4,36 @@ import Examples.compute.fully_connected_chain.results_study as rs
 import os, random
 
 
-def generate_system_id_chain(chain):
+def generate_system_id(system):
+    component = system.get(system.get_start())
+    id = ""
+    if component.DESCRIPTOR.name == "Merger":
+        id += generate_system_id_merger(system, component)
+    else:
+        id += generate_system_id_chain(system, component)
+    return id
+
+
+def generate_system_id_merger(system, component, depth=1):
+    """
+    Generates an id for the individuals of the genetic algorithm. Useful for detecting duplicates,
+    and creating readable ids for individuals.
+    :param chain: An ensemble
+    :return: String id
+    """
+    id = "Merge: "
+    merged = component.merged_ids
+    for c_id in merged:
+        c = system.get(c_id)
+        id += "\n|" + "\t"*depth
+        if c.DESCRIPTOR.name == "Merger":
+            id += generate_system_id_merger(system, c, depth+1)
+        else:
+            id += generate_system_id_chain(system, c)
+    return id
+
+
+def generate_system_id_chain(system, c):
     """
     Generates an id for the individuals of the genetic algorithm. Useful for detecting duplicates,
     and creating readable ids for individuals.
@@ -12,17 +41,17 @@ def generate_system_id_chain(chain):
     :return: String id
     """
     id = ""
-    component = chain.get(chain.get_start())
+    component = c
     while component is not None:
         if component.DESCRIPTOR.name == "Trigger":
             next_chain = component.component_ids
             assert len(next_chain) < 3, "ERROR: gen_system_id_chain only works with chains"
             id += "__%s__" % component.id
-            component = chain.get(next_chain[0])
+            component = system.get(next_chain[0])
         else:  # Classifier
             next = component.component_id
             if next != '':
-                component = chain.get(next)
+                component = system.get(next)
             else:
                 id += "%s" % component.id
                 component = None

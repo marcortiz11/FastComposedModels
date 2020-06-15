@@ -60,6 +60,7 @@ def train_trigger(sys, c):
         classifier_file = c.id
         io.save_pickle(tmp_location + classifier_file, c_dict)
         c.classifier.classifier_file = tmp_location + classifier_file
+        sys.replace(c.id, c)
 
 
 def pretty_print(results):
