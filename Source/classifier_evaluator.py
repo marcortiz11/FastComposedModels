@@ -24,7 +24,6 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids, pha
     contribution['logits'] = dict(zip(ids, L))
     contribution['model'] = {}  # dict(zip(input_ids_, [[c_dict['name']]] * n_inputs))
 
-
     # Time per instance:
     input_ids_aux = input_ids if input_ids is not None else ids
     time_instance = c_dict['metrics']['time'] / 128.0
@@ -42,10 +41,11 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids, pha
                                             classifier_dict, input_ids=input_ids, phase=phase)
         contribution['gt'].update(contribution_component['gt'])
         contribution['predictions'].update(contribution_component['predictions'])
+        contribution['logits'].update(contribution_component['logits'])
         contribution['model'].update(
             dict([(k, contribution['model'][k] + v) for k, v in contribution_component['model'].items()]))
+
         if classifier_dict is not None:
-            contribution['logits'].update(contribution_component['logits'])
             for k, v in contribution_component['time_instance'].items():
                 contribution['time_instance'][k] = contribution['time_instance'][k] + v if k in contribution[
                     'time_instance'] else v

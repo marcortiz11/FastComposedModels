@@ -15,7 +15,7 @@ classifiers_id = ['VGG13',
                   'ResNeXt29_32x4d',
                   'VGG11'
                   ]
-thresholds = [1.1, 1.1]
+thresholds = [0.9, 0.8]
 
 trigger_ids = ['trigger_classifier_0.1_VGG13',
                'trigger_classifier_0.4_ResNeXt29_32x4d']
@@ -30,7 +30,7 @@ chain_id = generate_system_id(chain)
 from Source.genetic_algorithm.operations_mutation import extend_merged_chain
 c_id_new = 'DenseNet-161'
 c_file_new = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', 'sota_models_cifar10-32-dev_validation', 'V001_DenseNet161_ref_0')
-extend_merged_chain(chain, classifiers_id[-1], c_id_new, 1.1, c_file_new=c_file_new)
+extend_merged_chain(chain, classifiers_id[-1], c_id_new, 0.9, c_file_new=c_file_new)
 chain.set_sysid(generate_system_id(chain))
 
 # Evaluate

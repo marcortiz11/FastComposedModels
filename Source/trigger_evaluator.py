@@ -30,6 +30,7 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids, pha
                                             input_ids=ids_next, phase=phase)
         contribution['gt'].update(contribution_component['gt'])
         contribution['predictions'].update(contribution_component['predictions'])
+        contribution['logits'].update(contribution_component['logits'])
 
         if contribution['model']:
             contribution['model'].update(

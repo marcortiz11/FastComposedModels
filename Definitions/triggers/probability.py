@@ -21,7 +21,7 @@ def __get_trigger_raw_data(data, phase):
         data_source = data.source.test_path
     elif phase == "train":
         data_source = data.source.train_path
-    else:  # phase == "val":
+    else:
         data_source = data.source.val_path
 
     dataset = io.read_pickle(data_source)

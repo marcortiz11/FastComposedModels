@@ -72,10 +72,10 @@ def mutation_operation(P, fit_vals):
         n_chains = len(merger.merged_ids) if merger is not None else 1
         tail_chains = [c.id for c in new_p.get_message().classifier if c.component_id == ""]
         c_id_extend = tail_chains[random.randint(0, n_chains - 1)]
-        c_id_new = c_id_extend[0]+'_'+c_id_new
+        c_id_new = c_id_extend[0] if c_id_extend[0] > '0' and c_id_extend[0] < '9' else "" + '_'+c_id_new
 
         # Perform the operation
-        om.extend_merged_chain(new_p, c_id_new, utils.pick_random_threshold(args), c_file_new=c_file_new)
+        om.extend_merged_chain(new_p, c_id_extend, c_id_new, th=utils.pick_random_threshold(args), c_file_new=c_file_new)
         new_p.set_sysid(utils.generate_system_id(new_p))
         offspring.append(new_p)
 
@@ -84,13 +84,13 @@ def mutation_operation(P, fit_vals):
         new_p = p.copy()
         c_id_existing = utils.pick_random_classifier(args, new_p)
         c_file_new = utils.pick_random_classifier(args)
-        c_id_new = c_id_existing[0]+"_"+__get_classifier_name(c_file_new)
-        om.replace_classifier(new_p, c_id_existing, c_id_new, c_file=c_file_new)
+        c_id_new = c_id_existing[0] if c_id_existing[0] > '0' and c_id_existing[0] < '9' else "" +__get_classifier_name(c_file_new)
+        om.replace_classifier_merger(new_p, c_id_existing, c_id_new, c_file=c_file_new)
         new_p.set_sysid(utils.generate_system_id(new_p))
         offspring.append(new_p)
 
     # Update threshold
-    if args .pm > 0:
+    if args.pm > 0:
         new_p = p.copy()
         sign = 2*(random.random() > 0.5) - 1
         om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th)
@@ -104,7 +104,7 @@ def mutation_operation(P, fit_vals):
         merger_id = merger.id
         merger_number_chains = len(merger.merged_ids)
 
-        if merger_number_chains < 5:
+        if merger_number_chains < 3:
             new_p = p.copy()
 
             c_file_new = utils.pick_random_classifier(args)
@@ -120,18 +120,18 @@ def mutation_operation(P, fit_vals):
 
 def crossover_operation(P, fit_vals):
 
-    P_chains = [p for p in P if 'Merger' not in p.get_start()]
+    P_chains = [p for p in P if len(p.get_message().merger) == 0]
     offspring = []
 
     if len(P_chains) > 1:
         # ai = selection.spin_roulette(fit_vals)
         # bi = selection.spin_roulette(fit_vals)
-        i_chains = random.sample(range(0, len(P_chains)), 2)  # To avoid repetition
+        i_chains = random.sample(range(0, len(P_chains)), 2)
         a = P_chains[i_chains[0]]
         b = P_chains[i_chains[1]]
 
         o = ob.merge_two_chains(a, b)
-        o.set_sysid(utils.generate_system_id(offspring))
+        o.set_sysid(utils.generate_system_id(o))
         offspring.append(o)
 
     return offspring
@@ -168,6 +168,9 @@ def evaluate_population(P, phases=['test', 'val']):
     R = [ev.Results]*len(P)
 
     if args.parallel:
+
+        assert args.device != 'cpu', "ERROR: Code does not evaluate the chain ensemble on PyTorch w\ CPU"
+
         from multiprocessing import Process, Manager
         processes = []
         R_manager = Manager().list(R)
@@ -177,6 +180,7 @@ def evaluate_population(P, phases=['test', 'val']):
         for i in range(args.parallel):
             processes[i].join()
         return list(R_manager)
+
     else:
         for i, p in enumerate(P):
             R[i] = ev.evaluate(p, p.get_start(), phases=phases)
@@ -220,16 +224,16 @@ if __name__ == "__main__":
         os.makedirs(os.path.join(os.environ['FCM'], os.environ['TMP']))
     random.seed()
 
-    R_dict = {}
-    R_dict_old = {}
-    R_dict_models = io.read_pickle(
-        os.path.join(os.environ['FCM'], 'small_examples', 'models_evaluation', args.dataset, 'models.pkl'))
-
     # Initial population
     P = generate_initial_population()
     R = evaluate_population(P)
     fit = fit_fun.f1_time_param_penalization(R, a=args.a)
     P_all = []
+
+    # Evaluation Results Dictionary
+    R_dict = {}
+    R_dict_old = {}
+    R_dict_models = dict(zip([p.get_sysid() for p in P], R))
 
     # Start the loop over generations
     iteration = 0
@@ -274,12 +278,12 @@ if __name__ == "__main__":
     meta_data_file = os.path.join(os.environ['FCM'],
                                   'Examples',
                                   'compute',
-                                  'chain_genetic_algorithm',
+                                  'bagging_boosting_of_chains_GA',
                                   'results',
                                   'metadata.json')
 
     id = str(random.randint(0, 1e16))
-    results_loc = os.path.join('Examples/compute/chain_genetic_algorithm/results', args.dataset, id)
+    results_loc = os.path.join('Examples/compute/bagging_boosting_of_chains_GA/results', args.dataset, id)
     comments = args.comment
     meta_data_result = manager_results.metadata_template(id, args.dataset, results_loc, comments)
 

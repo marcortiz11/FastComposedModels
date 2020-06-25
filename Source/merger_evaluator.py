@@ -90,31 +90,42 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None
 
     Logits = None
     GT = None
-    c0 = sys.get(c.merger_ids[0])
+    c0 = sys.get(c.merged_ids[0])
     c0_dict = io.read_pickle(c0.classifier_file)
     input_ids_ = input_ids if input_ids is not None else c0_dict[phase]['id']
     n_inputs = len(input_ids_)
 
     # For each classifier
-    for i, c_id in enumerate(c.merger_ids):
+    for i, c_id in enumerate(c.merged_ids):
         component = sys.get(c_id)
 
         if check_classifiers:
             eval.check_valid_classifier(component)
 
+        contribution_component = eval.__evaluate(sys, results, component, check_classifiers, classifier_dict,
+                                            input_ids=input_ids, phase=phase)
+
+        ids = np.array([key for key in contribution_component['gt'].keys()])
+        gt = np.array([contribution_component['gt'][id] for id in ids])
+        L = np.array([contribution_component['logits'][id] for id in ids])
+
+        """
         c_dict = io.read_pickle(component.classifier_file)
         L, gt, ids = eval_utils.get_Lgtid(c_dict, phase, input_ids)
+        """
 
         if GT is None: GT = gt
         else: assert np.array_equal(gt, GT),\
             "ERROR in Merger: Classifiers are supposed to have the same ids in the same order"
 
         if Logits is None:
-            Logits = np.empty((len(gt), len(c.merger_ids), len(L[0])))
+            Logits = np.empty((len(ids), len(c.merged_ids), len(L[0])))
         Logits[:, i, :] = L
 
+        """
         results[c_id] = eval.create_metrics_classifier(c_dict, np.argmax(L, axis=1), gt, n_inputs)
         eval.update_metrics_system(results, c_dict, n_inputs)
+        """
 
     # Apply the merge technique
     if c.merge_type == fcm.Merger.AVERAGE:
@@ -158,7 +169,7 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None
             pred = weighted_max(Logits, w_models)
 
     assert classifier_dict is None, "Merger does not support being saved as a classifier yet!!!"
-    contribution['model'] = dict(zip(input_ids_, list(c.merger_ids)*n_inputs))
+    contribution['model'] = dict(zip(input_ids_, list(c.merged_ids)*n_inputs))
     contribution['predictions'] = dict(zip(ids, pred))
     contribution['gt'] = dict(zip(ids, gt))
 

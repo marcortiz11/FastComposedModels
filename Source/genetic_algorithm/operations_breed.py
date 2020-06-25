@@ -153,15 +153,17 @@ def merge_two_chains(a, b):
     for classifier in b_proto_mesage.classifier:
         classifier_ = copy.deepcopy(classifier)
         classifier_.id = "1_"+classifier_.id
-        classifier_.component_id = classifier_.component_id if classifier_.component_id != "" else ""
+        classifier_.component_id = "_".join(classifier_.component_id.split('_')[0:3] + ['1'] + classifier_.component_id.split(
+            '_')[3:]) if classifier_.component_id != "" else ""
         classifier_.data_id = "1_" + classifier_.data_id if classifier_.data_id != "" else ""
         m_system.add_classifier(classifier_)
 
     for trigger in b_proto_mesage.trigger:
         trigger_ = copy.deepcopy(trigger)
-        trigger_.id = trigger.id
+        trigger_.id = '_'.join(trigger_.id.split('_')[0:3]+['1']+trigger_.id.split('_')[3:])
         for i in range(len(trigger_.component_ids)):
             trigger_.component_ids[i] = "1_" + trigger_.component_ids[i]
+        trigger_.classifier.data_id = "1_" + trigger_.classifier.data_id if trigger_.classifier.data_id != "" else ""
         m_system.add_trigger(trigger_)
 
     for data in b_proto_mesage.data:
@@ -170,9 +172,8 @@ def merge_two_chains(a, b):
         m_system.add_data(data_)
 
     # 3) Finally add merger on m_system
-    import Examples.compute.chain_genetic_algorithm.utils as ga_utils
     import Source.FastComposedModels_pb2 as fcm
-    merger = make.make_merger('Merger', [ga_utils.get_classifier_index(a, 0), "1_"+ga_utils.get_classifier_index(b, 0)],
+    merger = make.make_merger('Merger', [a.get_start(), "1_"+b.get_start()],
                               merge_type=fcm.Merger.AVERAGE)
     m_system.set_start('Merger')
     m_system.add_merger(merger)
