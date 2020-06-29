@@ -4,6 +4,9 @@ from Source import io_util as io
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import matplotlib.cm as cm
+
+colors = cm.rainbow(np.linspace(0, 1, 10))
 
 
 def fitness_evolution(individuals_fitness_generation, R):
@@ -44,7 +47,7 @@ def percentage_repeated_individuals(individuals_fitness_generation):
     return percentages
 
 
-def plot_fitness_evolution(individuals_fitness_generation, R):
+def plot_fitness_evolution(individuals_fitness_generation, R, id=None):
     X = range(len(individuals_fitness_generation))
     Y = fitness_evolution(individuals_fitness_generation, R)
 
@@ -52,50 +55,49 @@ def plot_fitness_evolution(individuals_fitness_generation, R):
     Y_average = [y[1] for y in Y]
     Y_min = [y[2] for y in Y]
 
-    plt.figure()
-    plt.grid(True)
-    plt.title("Evolution of the Fitness value")
-    plt.xlabel("Generations")
-    plt.ylabel("Validation Fitness Value")
-    plt.scatter(X, Y_max, facecolor='gray', marker="_")
-    plt.scatter(X, Y_average, facecolor='blue')
-    plt.scatter(X, Y_min, facecolor='gray', marker="_")
-    plt.vlines(X, Y_min, Y_max, color='gray', linewidth=0.5)
-    plt.show()
+    sub_plt = plt.subplot(1, 3, 1)
+    sub_plt.grid(True)
+    sub_plt.set_title("Evolution of the Fitness value")
+    sub_plt.set_xlabel("Generations")
+    sub_plt.set_ylabel("Validation Fitness Value")
+    # sub_plt.scatter(X, Y_max, facecolor='gray', marker="_")
+    sub_plt.scatter(X, Y_average, s=5, label=id)
+    # sub_plt.scatter(X, Y_min, facecolor='gray', marker="_")
+    # sub_plt.vlines(X, Y_min, Y_max, color='gray', linewidth=0.5)
+    sub_plt.legend()
 
 
-def plot_offspring_replacement_evolution(individuals_fitness_generation):
+def plot_offspring_replacement_evolution(individuals_fitness_generation, id=None):
     X = range(len(individuals_fitness_generation))
     Y = percentage_replacement_offspring(individuals_fitness_generation)
 
-    plt.figure()
-    plt.grid(True)
-    plt.title("Offspring survival rate")
-    plt.xlabel("Generations")
-    plt.ylabel("Rate")
-    plt.ylim(bottom=0, top=1)
-    plt.plot(X, Y)
-    plt.show()
+    sub_plt = plt.subplot(1, 3, 2)
+    sub_plt.grid(True)
+    sub_plt.set_title("Offspring survival rate")
+    sub_plt.set_xlabel("Generations")
+    sub_plt.set_ylabel("Rate")
+    sub_plt.set_ylim(bottom=0, top=1)
+    sub_plt.plot(X, Y, label=id)
+    sub_plt.legend()
 
-
-def plot_repeated_individuals_evolution(individuals_fitness_generation):
+def plot_repeated_individuals_evolution(individuals_fitness_generation, id=None):
     X = range(len(individuals_fitness_generation))
     Y = percentage_repeated_individuals(individuals_fitness_generation)
 
-    plt.figure()
-    plt.grid(True)
-    plt.title("Ratio unique individuals")
-    plt.xlabel("Generations")
-    plt.ylabel("Ratio")
-    plt.ylim(bottom=0, top=1)
-    plt.plot(X, Y)
-    plt.show()
+    sub_plt = plt.subplot(1, 3, 3)
+    sub_plt.grid(True)
+    sub_plt.set_title("Ratio unique individuals")
+    sub_plt.set_xlabel("Generations")
+    sub_plt.set_ylabel("Ratio")
+    sub_plt.set_ylim(bottom=0, top=1)
+    sub_plt.plot(X, Y, label=id)
+    sub_plt.legend()
 
 
 if __name__ == "__main__":
 
-    experiment = 'chain_genetic_algorithm_multinode'
-    id = 9672911326659630
+    experiment = 'genetic_algorithm_multinode'
+    ids = [103107171442567, 2979780544684821, 445772309251396, 3761301992715777]
 
     # 1) G.A. Chain ensembles
     GA_results_metadata_file = os.path.join(os.environ['FCM'],
@@ -105,12 +107,22 @@ if __name__ == "__main__":
                                             'results',
                                             'metadata.json')
 
-    # Get evaluation results from query
-    GA_res_loc = results_manager.get_results_by_id(GA_results_metadata_file, id)
-    individuals_fitness_generation = io.read_pickle(os.path.join(GA_res_loc, 'individuals_fitness_per_generation.pkl'))
-    R = io.read_pickle(os.path.join(GA_res_loc, 'results_ensembles.pkl'))
+    plt.figure()
 
-    # Plot performance of the Genetic Algorithm through generations
-    plot_fitness_evolution(individuals_fitness_generation, R)
-    plot_offspring_replacement_evolution(individuals_fitness_generation)
-    plot_repeated_individuals_evolution(individuals_fitness_generation)
+    # Get evaluation results from query
+    for id in ids:
+        GA_res_loc = results_manager.get_results_by_id(GA_results_metadata_file, id)
+        individuals_fitness_generation = io.read_pickle(os.path.join(GA_res_loc, 'individuals_fitness_per_generation.pkl'))
+        R = io.read_pickle(os.path.join(GA_res_loc, 'results_ensembles.pkl'))
+
+        # Plot performance of the Genetic Algorithm through generations
+        plot_fitness_evolution(individuals_fitness_generation, R, id)
+        plot_offspring_replacement_evolution(individuals_fitness_generation, id)
+        plot_repeated_individuals_evolution(individuals_fitness_generation, id)
+
+        print("=== Experiment %d ===" %id)
+        for individual in individuals_fitness_generation[-1][0]:
+            print(individual)  # Print individuals last generation
+        print("="*9)
+
+    plt.show()

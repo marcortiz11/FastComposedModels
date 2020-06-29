@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     import os
 
-    multinode_meta_file = os.path.join(os.environ['FCM'], 'Examples', 'compute', 'chain_genetic_algorithm_multinode',
+    multinode_meta_file = os.path.join(os.environ['FCM'], 'Examples', 'compute', 'genetic_algorithm_multinode',
                                        'results', 'sota_models_cifar10-40-dev_validation', 'cifar10_8nodes_800population_400offspring_0',
                                        'multinode_metainfo.json')
     execution_time = 0

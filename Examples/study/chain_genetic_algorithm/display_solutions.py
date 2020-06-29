@@ -7,10 +7,10 @@ import os
 if __name__ == "__main__":
 
     # Information about the experiment
-    experiment = 'chain_genetic_algorithm_multinode'
+    experiment = 'genetic_algorithm_multinode'
     experiment_dir = os.path.join(os.environ['FCM'], 'Examples', 'compute', experiment)
     meta_data_file = os.path.join(experiment_dir, 'results', 'metadata.json')
-    id = "2313347320959223"
+    id = "3761301992715777"
 
     # Retrieve the results of the experiments
     # models_data_path = os.path.join(os.environ['FCM'], 'small_examples', 'models_evaluation', dataset, 'models_cpu.pkl')
@@ -19,6 +19,6 @@ if __name__ == "__main__":
 
     chain = io.read_pickle(chain_data_path)
 
-    myplt.plot_accuracy_parameters_time(chain, dataset+' test solution space')
+    myplt.plot_accuracy_parameters_time(chain, dataset + ' test solution space')
     myplt.show()
 

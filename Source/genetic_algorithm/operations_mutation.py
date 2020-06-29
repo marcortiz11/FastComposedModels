@@ -29,9 +29,9 @@ def __make_data_and_dataset(i, c_id, c_file, th):
     number_individual_id = str(int.from_bytes(individual_id.encode('utf-8'), byteorder='big'))
 
     # Create dataset for new trigger
-    train_path = os.path.join(os.environ['FCM'], 'Data', 'DATASET_' + str(number_individual_id[:10]) + '_' + c_id + '_train')
-    test_path = os.path.join(os.environ['FCM'], 'Data', 'DATASET_' + str(number_individual_id[:10]) + '_' + c_id + '_test')
-    val_path = os.path.join(os.environ['FCM'], 'Data', 'DATASET_' + str(number_individual_id[:10]) + '_' + c_id + '_val')
+    train_path = os.path.join(os.environ['FCM'], 'Data', 'DATASET_' + str(number_individual_id[::3]) + '_' + c_id + '_train')
+    test_path = os.path.join(os.environ['FCM'], 'Data', 'DATASET_' + str(number_individual_id[::3]) + '_' + c_id + '_test')
+    val_path = os.path.join(os.environ['FCM'], 'Data', 'DATASET_' + str(number_individual_id[::3]) + '_' + c_id + '_val')
     __update_dataset(c_file, train_path, test_path, val_path, th)
 
     # Define data

@@ -16,7 +16,7 @@ def argument_parse(argv):
     parser = argparse.ArgumentParser(usage="main.py [options]",
                                      description="Genetic algorithm for finding the best chain under environment constraints.")
     parser.add_argument("--dataset", default="sota_models_cifar10-32-dev_validation", help="Datasets to evaluate d1 d2 d3, default=*")
-    # Search space params
+    # Search-space params
     parser.add_argument("--population", default=1000, type=int, help="Population at each generation")
     parser.add_argument("--offspring", default=500, type=int, help="Children generated at each generation")
     parser.add_argument("--iterations", default=40, type=int, help="Number of iterations before finishing algorithm")
@@ -27,8 +27,8 @@ def argument_parse(argv):
     parser.add_argument("--a", default=5, type=float)
     # Execution parameters
     parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
-    parser.add_argument("--parallel", default=20, type=int, help="Parallel evaluation of the ensembles")
-    parser.add_argument("--device", default="cpu", type=str, help="Device where to execute the ensembles (cpu or gpu)")
+    parser.add_argument("--parallel", default=0, type=int, help="Parallel evaluation of the ensembles")
+    parser.add_argument("--device", default="none", type=str, help="Device where to execute the ensembles (cpu, gpu or none)")
     parser.add_argument("--comment", default="", type=str, help="Meaningful comments about the run")
 
     return parser.parse_args(argv)
@@ -72,7 +72,7 @@ def mutation_operation(P, fit_vals):
         n_chains = len(merger.merged_ids) if merger is not None else 1
         tail_chains = [c.id for c in new_p.get_message().classifier if c.component_id == ""]
         c_id_extend = tail_chains[random.randint(0, n_chains - 1)]
-        c_id_new = c_id_extend[0] if c_id_extend[0] > '0' and c_id_extend[0] < '9' else "" + '_'+c_id_new
+        c_id_new = (c_id_extend[0] + '_' if c_id_extend[0] > '0' and c_id_extend[0] <= '9' else '') + c_id_new
 
         # Perform the operation
         om.extend_merged_chain(new_p, c_id_extend, c_id_new, th=utils.pick_random_threshold(args), c_file_new=c_file_new)
@@ -84,7 +84,7 @@ def mutation_operation(P, fit_vals):
         new_p = p.copy()
         c_id_existing = utils.pick_random_classifier(args, new_p)
         c_file_new = utils.pick_random_classifier(args)
-        c_id_new = c_id_existing[0] if c_id_existing[0] > '0' and c_id_existing[0] < '9' else "" +__get_classifier_name(c_file_new)
+        c_id_new = (c_id_existing[0] + '_' if c_id_existing[0] > '0' and c_id_existing[0] <= '9' else '') +__get_classifier_name(c_file_new)
         om.replace_classifier_merger(new_p, c_id_existing, c_id_new, c_file=c_file_new)
         new_p.set_sysid(utils.generate_system_id(new_p))
         offspring.append(new_p)

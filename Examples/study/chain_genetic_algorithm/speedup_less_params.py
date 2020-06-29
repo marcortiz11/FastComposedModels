@@ -1,11 +1,13 @@
 import Examples.paretto_front as front
 import Examples.metadata_manager_results as results_manager
 import Source.genetic_algorithm.fitting_functions as fit_fun
+from Source.system_evaluator_utils import pretty_print
 import Source.io_util as io
 import statistics as stats
 import numpy as np
 import os
 import sys
+
 
 def print_metrics_model(id, r):
     print()
@@ -25,13 +27,14 @@ def print_metrics_model(id, r):
 
 if __name__ == "__main__":
 
-    experiment = 'chain_genetic_algorithm_multinode'
+    experiment = 'genetic_algorithm_multinode'
     query_params = {
-        'dataset': "sota_models_caltech256-32-dev_validation",
-        'comment': 'Optimization_acc_realCPUtime_param',
-        'selection': 'roulette',
-        'iterations': 40,
+        'dataset': "sota_models_cifar100-32-dev_validation",
+        'selection': 'nfit',
+        'comment': 'Bagging_chains_Optimization_acc_time_params',
+        'iterations': 100,
         'a': 5,
+        'pc': 0.4
     }
     num = 1
 
@@ -71,7 +74,7 @@ if __name__ == "__main__":
         front_GA = front.get_front_time_accuracy(GA_chains, phase="test")
         list_chain_res = list(GA_chains.values())
         list_chain_keys = list(GA_chains.keys())
-        list_fit_vals = np.array(fit_fun.f1_time_param_penalization(list_chain_res, 5, 'test'))*-1
+        list_fit_vals = np.array(fit_fun.f1_time_param_penalization(list_chain_res, query_params['a'], 'test'))*-1
         sorted = np.argsort(list_fit_vals)
 
         for id in sorted:
@@ -83,6 +86,7 @@ if __name__ == "__main__":
         print_metrics_model(speedup_chain_id, speedup_chain_result)
 
         # Compute increase in params
+        pretty_print(speedup_chain_result)
         speedup.append(time/speedup_chain_result.test['system'].time)
         param_incrase.append(speedup_chain_result.test['system'].params/params)
         acc_increase.append(speedup_chain_result.test['system'].accuracy-acc)
