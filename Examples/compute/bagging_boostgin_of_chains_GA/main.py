@@ -23,11 +23,11 @@ def argument_parse(argv):
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
     parser.add_argument("--pm", default=0.8, type=float, help="Probability of mutation")
     parser.add_argument("--pc", default=0.2, type=float, help="Probability of crossing/breeding")
-    parser.add_argument("--selection", default="nfit", type=str, help="most fit selection (mfit) or roulette (roulette)")
-    parser.add_argument("--a", default=5, type=float)
+    parser.add_argument("--selection", default="nfit", type=str, help="Most fit selection (mfit) or roulette (roulette)")
+    parser.add_argument("--a", nargs='+', default=[5/7, 1/7, 1/7], type=float, help="Fitting function's weight")
     # Execution parameters
-    parser.add_argument("--plot", type=int, help="Plot the ensembles generated every generation")
-    parser.add_argument("--parallel", default=0, type=int, help="Parallel evaluation of the ensembles")
+    parser.add_argument("--plot", default=0, type=int, help="Plot the ensembles generated every generation")
+    parser.add_argument("--cores", default=0, type=int, help="Parallel evaluation of the ensembles")
     parser.add_argument("--device", default="none", type=str, help="Device where to execute the ensembles (cpu, gpu or none)")
     parser.add_argument("--comment", default="", type=str, help="Meaningful comments about the run")
 
@@ -167,17 +167,17 @@ def evaluate_population(P, phases=['test', 'val']):
 
     R = [ev.Results]*len(P)
 
-    if args.parallel:
+    if args.cores:
 
         assert args.device != 'cpu', "ERROR: Code does not evaluate the chain ensemble on PyTorch w\ CPU"
 
         from multiprocessing import Process, Manager
         processes = []
         R_manager = Manager().list(R)
-        for i in range(args.parallel):
-            processes.append(Process(target=evaluate_process, args=(P, i, R_manager, args.parallel, phases)))
+        for i in range(args.cores):
+            processes.append(Process(target=evaluate_process, args=(P, i, R_manager, args.cores, phases)))
             processes[i].start()
-        for i in range(args.parallel):
+        for i in range(args.cores):
             processes[i].join()
         return list(R_manager)
 
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     # Initial population
     P = generate_initial_population()
     R = evaluate_population(P)
-    fit = fit_fun.f1_time_param_penalization(R, a=args.a)
+    fit = fit_fun.f1_time_param_penalization(R, args.a)
     P_all = []
 
     # Evaluation Results Dictionary
@@ -246,7 +246,7 @@ if __name__ == "__main__":
         # Evaluate offspring
         R_offspring = evaluate_population(P_offspring)
         # Evaluate offspring individuals
-        fit_offspring = fit_fun.f1_time_param_penalization(R_offspring, a=args.a)
+        fit_offspring = fit_fun.f1_time_param_penalization(R_offspring, args.a)
         # Selection
         fit_generation = fit + fit_offspring
         P_generation = P + P_offspring

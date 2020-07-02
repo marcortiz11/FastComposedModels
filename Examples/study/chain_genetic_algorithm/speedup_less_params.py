@@ -29,14 +29,13 @@ if __name__ == "__main__":
 
     experiment = 'genetic_algorithm_multinode'
     query_params = {
-        'dataset': "sota_models_cifar100-32-dev_validation",
+        'dataset': "sota_models_caltech256-32-dev_validation",
         'selection': 'nfit',
-        'comment': 'Bagging_chains_Optimization_acc_time_params',
-        'iterations': 100,
+        'comment': 'Bagging_chains_Optimization_acc',
+        'iterations': 200,
         'a': 5,
-        'pc': 0.4
     }
-    num = 1
+    num = 3
 
     sys.modules['Source'] = sys.modules['Source']
 
@@ -74,7 +73,7 @@ if __name__ == "__main__":
         front_GA = front.get_front_time_accuracy(GA_chains, phase="test")
         list_chain_res = list(GA_chains.values())
         list_chain_keys = list(GA_chains.keys())
-        list_fit_vals = np.array(fit_fun.f1_time_param_penalization(list_chain_res, query_params['a'], 'test'))*-1
+        list_fit_vals = np.array(fit_fun.f1_accuracy(list_chain_res, query_params['a'], 'test'))*-1
         sorted = np.argsort(list_fit_vals)
 
         for id in sorted:

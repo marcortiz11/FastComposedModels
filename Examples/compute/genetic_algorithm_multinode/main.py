@@ -1,4 +1,4 @@
-import Examples.compute.chain_genetic_algorithm.main as main
+import Examples.compute.bagging_boostgin_of_chains_GA.main as main
 import Examples.metadata_manager_results as manager_results
 import Source.genetic_algorithm.selection as selection
 import Source.genetic_algorithm.fitting_functions as fit_fun
@@ -12,12 +12,12 @@ def save_results(R_dict, individuals_fitness_per_generation):
     meta_data_file = os.path.join(os.environ['FCM'],
                                   'Examples',
                                   'compute',
-                                  'chain_genetic_algorithm_multinode',
+                                  'genetic_algorithm_multinode',
                                   'results',
                                   'metadata.json')
 
     id = str(random.randint(0, 1e16))
-    results_loc = os.path.join('Examples/compute/chain_genetic_algorithm_multinode/results', main.args.dataset, id)
+    results_loc = os.path.join('Examples/compute/genetic_algorithm_multinode/results', main.args.dataset, id)
     comments = main.args.comment
     meta_data_result = manager_results.metadata_template(id, main.args.dataset, results_loc, comments)
 
@@ -38,8 +38,8 @@ def multinode_earn(comm):
     if r == 0:
         P = main.generate_initial_population()
         R = main.evaluate_population(P, phases=["val", "test"])
-        P_fit = fit_fun.f1_time_param_penalization(R, a=main.args.a)
-        R_dict = {}  # Evaluation results of the regarded individuals
+        P_fit = fit_fun.f1_time_param_penalization(R, main.args.a)
+        R_dict = {}  # Evaluation results
 
         for i, p in enumerate(P):
             R_dict[p.get_sysid()] = R[i]
@@ -62,7 +62,7 @@ def multinode_earn(comm):
         # 3) Every Node: Generate and evaluate offspring and fitness
         P_offspring_worker = main.generate_offspring(P, P_fit, O)
         R_offspring_worker = main.evaluate_population(P_offspring_worker, phases=["val", "test"])
-        fit_offspring_worker = fit_fun.f1_time_param_penalization(R_offspring_worker, a=main.args.a)
+        fit_offspring_worker = fit_fun.f1_time_param_penalization(R_offspring_worker, main.args.a)
         worker_data = {'offspring': P_offspring_worker, 'fitness': fit_offspring_worker, 'R': R_offspring_worker}
 
         # 4) Send work back to manager node (rank=0)

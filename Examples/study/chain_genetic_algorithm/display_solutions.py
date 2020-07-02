@@ -10,7 +10,7 @@ if __name__ == "__main__":
     experiment = 'genetic_algorithm_multinode'
     experiment_dir = os.path.join(os.environ['FCM'], 'Examples', 'compute', experiment)
     meta_data_file = os.path.join(experiment_dir, 'results', 'metadata.json')
-    id = "3761301992715777"
+    id = "4179181233324271"
 
     # Retrieve the results of the experiments
     # models_data_path = os.path.join(os.environ['FCM'], 'small_examples', 'models_evaluation', dataset, 'models_cpu.pkl')
@@ -21,4 +21,3 @@ if __name__ == "__main__":
 
     myplt.plot_accuracy_parameters_time(chain, dataset + ' test solution space')
     myplt.show()
-
