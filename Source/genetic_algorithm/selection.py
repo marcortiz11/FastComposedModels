@@ -76,11 +76,15 @@ def tournament_selection(fit_vals, K, p=0.95):
     prob_distribution_selection /= sum(prob_distribution_selection)
 
     tournament_individuals = np.random.choice(len(fit_vals), K, replace=False)
+    print(tournament_individuals)
     fitness_individuals = np.array([fit_vals[i] for i in tournament_individuals])
+    print(fitness_individuals)
 
-    result_tournment = np.argsort(1 - fitness_individuals)
+    result_tournment = np.argsort(-1 * fitness_individuals)
     position = np.random.choice(result_tournment, 1, p=prob_distribution_selection)
     winner = tournament_individuals[position[0]]
+    print(winner)
+
 
     return winner
 
