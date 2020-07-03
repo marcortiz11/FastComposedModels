@@ -25,6 +25,7 @@ def argument_parse(argv):
     parser.add_argument("--pc", default=0.2, type=float, help="Probability of crossing/breeding")
     parser.add_argument("--selection", default="nfit", type=str, help="Most fit selection (mfit) or roulette (roulette)")
     parser.add_argument("--a", nargs='+', default=[5/7, 1/7, 1/7], type=float, help="Fitting function's weight")
+    parser.add_argument("--k", default=10, type=int, help="Tournament size")
     # Execution parameters
     parser.add_argument("--plot", default=0, type=int, help="Plot the ensembles generated every generation")
     parser.add_argument("--cores", default=0, type=int, help="Parallel evaluation of the ensembles")
@@ -120,16 +121,25 @@ def mutation_operation(P, fit_vals):
 
 def crossover_operation(P, fit_vals):
 
-    P_chains = [p for p in P if len(p.get_message().merger) == 0]
+    indices = [i for i, p in enumerate(P) if len(p.get_message().merger) == 0]
+    P_chains = [P[i] for i in indices]
+    Fit_chains = [fit_vals[i] for i in indices]
+
     offspring = []
 
-    if len(P_chains) > 1:
-        # ai = selection.spin_roulette(fit_vals)
-        # bi = selection.spin_roulette(fit_vals)
-        i_chains = random.sample(range(0, len(P_chains)), 2)
-        a = P_chains[i_chains[0]]
-        b = P_chains[i_chains[1]]
+    if len(indices) > 1:
 
+        ai = bi = 0
+        while ai == bi:
+            ai = selection.tournament_selection(Fit_chains, min(len(Fit_chains)/2, args.k))
+            bi = selection.tournament_selection(Fit_chains, min(len(Fit_chains)/2, args.k))
+
+        # i_chains = random.sample(range(0, len(P_chains)), 2)
+
+        a = P_chains[ai]
+        b = P_chains[bi]
+
+        # Crossover operation: Merge chains or single classifiers
         o = ob.merge_two_chains(a, b)
         o.set_sysid(utils.generate_system_id(o))
         offspring.append(o)
