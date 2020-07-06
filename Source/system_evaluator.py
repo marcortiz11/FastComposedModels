@@ -6,6 +6,7 @@ import warnings
 
 
 class Metrics(object):
+
     __slots__ = ('accuracy',
                  'time',
                  'time_max',
@@ -16,6 +17,16 @@ class Metrics(object):
                  'cm',  # Confusion matrix
                  'params',
                  'ops',)
+
+    def __init__(self):
+        self.time = 0
+        self.accuracy = 0
+        self.params = 0
+        self.ops = 0
+        self.time_max = 0
+        self.time_min = 0
+        self.time_std = 0
+        self.instances = 0
 
 
 class Results(object):
@@ -221,36 +232,9 @@ def evaluate(sys, start_id, check_classifiers=False, evaluate_train=False, class
     eval.test = dict()
     eval.val = dict()
 
-    # TODO: Create a function for the following 30 lines
     eval.test['system'] = Metrics()
-    eval.test['system'].time = 0
-    eval.test['system'].accuracy = 0
-    eval.test['system'].params = 0
-    eval.test['system'].ops = 0
-    eval.test['system'].time_max = 0
-    eval.test['system'].time_min = 0
-    eval.test['system'].time_std = 0
-    eval.test['system'].instances = 0
-
     eval.train['system'] = Metrics()
-    eval.train['system'].time = 0
-    eval.train['system'].accuracy = 0
-    eval.train['system'].params = 0
-    eval.train['system'].ops = 0
-    eval.train['system'].time_max = 0
-    eval.train['system'].time_min = 0
-    eval.train['system'].time_std = 0
-    eval.train['system'].instances = 0
-
     eval.val['system'] = Metrics()
-    eval.val['system'].time = 0
-    eval.val['system'].accuracy = 0
-    eval.val['system'].params = 0
-    eval.val['system'].ops = 0
-    eval.val['system'].time_max = 0
-    eval.val['system'].time_min = 0
-    eval.val['system'].time_std = 0
-    eval.val['system'].instances = 0
 
     component = sys.get(start_id)
 

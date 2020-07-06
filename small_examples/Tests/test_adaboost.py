@@ -86,15 +86,15 @@ def weighted_max(Logits, w_models):
 
 if __name__ == "__main__":
 
-    path = os.environ['PYTHONPATH']
-    Classifier_Path = path+"/Definitions/Classifiers/"
+    path = os.environ['FCM']
+    Classifier_Path = "../../Definitions/Classifiers/sota_models_caltech256-32-dev_validation/"
     models = [Classifier_Path + f for f in os.listdir(Classifier_Path) if ".pkl" in f]
 
     # Train info
     r = np.random.randint(0, len(models))
     n_models = 3
     merge_models = models[r:r+n_models]
-    size = 1e4
+    size = 5e3
     gt_train = None
     L_all_train = None
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         L_all_train[:, i, :] = L
 
     # Test info
-    size = 1e4
+    size = 5e3
     gt = None
     L_all = None
 

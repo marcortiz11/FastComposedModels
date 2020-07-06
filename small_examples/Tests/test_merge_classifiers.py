@@ -20,6 +20,7 @@ for classifier in classifiers:
 
 merged_classifiers.set_start('Merger')
 R = evaluate(merged_classifiers, merged_classifiers.get_start())
+pretty_print(R)
 
 
 # Manual check

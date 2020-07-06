@@ -1,7 +1,5 @@
-import Source.io_util as io
 import Source.system_evaluator as eval
 import Source.FastComposedModels_pb2 as fcm
-import Source.system_evaluator_utils as eval_utils
 import numpy as np
 import math
 
@@ -85,24 +83,31 @@ def weighted_max(Logits, w_models):
     return predictions
 
 
-def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None, phase="test"):
-    contribution = {}
+def get_logits_merged_components(sys, results, c, input_ids=None, check_classifiers=False, phase="test"):
 
-    Logits = None
-    GT = None
-    c0 = sys.get(c.merged_ids[0])
-    c0_dict = io.read_pickle(c0.classifier_file)
-    input_ids_ = input_ids if input_ids is not None else c0_dict[phase]['id']
-    n_inputs = len(input_ids_)
+    """
+    Aranges in a 3-D Tensor the classification predictions of the merged ensembles/classifiers)
+    :param sys: System
+    :param results: Results Dictionary
+    :param c: Merger component
+    :param input_ids: Ids of the samples
+    :param check_classifiers: Check classifiers during evaluation
+    :param phase: Evaluation split (train,test,val)
+    :return: The predictions, ground truth, and  evaluated ids of each merged component (ensemble/classifier)
+    """
 
     # For each classifier
+    Logits = None
+    Gt = None
+    Ids = None
+
     for i, c_id in enumerate(c.merged_ids):
         component = sys.get(c_id)
 
         if check_classifiers:
             eval.check_valid_classifier(component)
 
-        contribution_component = eval.__evaluate(sys, results, component, check_classifiers, classifier_dict,
+        contribution_component = eval.__evaluate(sys, results, component, check_classifiers, None,
                                             input_ids=input_ids, phase=phase)
 
         ids = np.array([key for key in contribution_component['gt'].keys()])
@@ -114,9 +119,13 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None
         L, gt, ids = eval_utils.get_Lgtid(c_dict, phase, input_ids)
         """
 
-        if GT is None: GT = gt
-        else: assert np.array_equal(gt, GT),\
+        if Gt is None: Gt = gt
+        else: assert np.array_equal(gt, Gt),\
             "ERROR in Merger: Classifiers are supposed to have the same ids in the same order"
+
+        if Ids is None: Ids = ids
+        else: assert np.array_equal(Ids, ids), \
+            "ERROR in Merger: Merged solutions do not predict the same set of inputs"
 
         if Logits is None:
             Logits = np.empty((len(ids), len(c.merged_ids), len(L[0])))
@@ -126,6 +135,14 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None
         results[c_id] = eval.create_metrics_classifier(c_dict, np.argmax(L, axis=1), gt, n_inputs)
         eval.update_metrics_system(results, c_dict, n_inputs)
         """
+
+    return Logits, Gt, Ids
+
+
+def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None, phase="test"):
+    contribution = {}
+
+    Logits, Gt , Ids = get_logits_merged_components(sys, results, c, check_classifiers=check_classifiers, phase=phase)
 
     # Apply the merge technique
     if c.merge_type == fcm.Merger.AVERAGE:
@@ -138,39 +155,36 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None
     elif c.merge_type == fcm.Merger.MAX:  # GLOBAL MAX PROB CLASS
         Logits_ = Logits.reshape(Logits.shape[0], -1)
         pred = np.apply_along_axis(lambda a: np.argmax(a) % Logits.shape[2], 1, Logits_)
+
     elif c.merge_type > 2:
-        # ADABOOSTING
-        gt_train = None
-        Logits_train = None
-        for i, m in enumerate(c.merger_ids):
-            c_dict = io.read_pickle(m)
-            L_train, gt_train = c_dict['train']['logits'], c_dict['train']['gt']
-            if Logits_train is None:
-                Logits_train = np.empty((len(gt_train), len(c.merger_ids), len(L_train[0])))
-            Logits_train[:, i, :] = L_train
+        # BOOSTING (ADA BOOST)
+
+        train = dict()  # Fake variable just to obtain predictions during training
+        train['system'] = eval.Metrics()
+        Logits_train, Gt_train, _ = get_logits_merged_components(sys, train, c, check_classifiers=check_classifiers, phase="train")
 
         if c.merge_type == fcm.Merger.ADABOOST_LABEL_WEIGHTS_LOGIT_INFERENCE:
-            w_models = adaboost_samme_label(Logits_train, gt_train)
+            w_models = adaboost_samme_label(Logits_train, Gt_train)
             pred = weighted_average(Logits, w_models)
         elif c.merge_type == fcm.Merger.ADABOOST_LABEL_WEIGHTS_LABEL_INFERENCE:
-            w_models = adaboost_samme_label(Logits_train, gt_train)
+            w_models = adaboost_samme_label(Logits_train, Gt_train)
             pred = weighted_voting(Logits, w_models)
         elif c.merge_type == fcm.Merger.ADABOOST_LOGIT_WEIGHTS_LOGIT_INFERENCE:
-            w_models = adaboost_samme_logit(Logits_train, gt_train)
+            w_models = adaboost_samme_logit(Logits_train, Gt_train)
             pred = weighted_average(Logits, w_models)
         elif c.merge_type == fcm.Merger.ADABOOST_LOGIT_WEIGHTS_LABEL_INFERENCE:
-            w_models = adaboost_samme_logit(Logits_train, gt_train)
+            w_models = adaboost_samme_logit(Logits_train, Gt_train)
             pred = weighted_voting(Logits, w_models)
         elif c.merge_type == fcm.Merger.ADABOOST_LOGIT_WEIGHTS_MAX_INFERENCE:
-            w_models = adaboost_samme_logit(Logits_train, gt_train)
+            w_models = adaboost_samme_logit(Logits_train, Gt_train)
             pred = weighted_max(Logits, w_models)
         elif c.merge_type == fcm.Merger.ADABOOST_LABEL_WEIGHTS_MAX_INFERENCE:
-            w_models = adaboost_samme_label(Logits_train, gt_train)
+            w_models = adaboost_samme_label(Logits_train, Gt_train)
             pred = weighted_max(Logits, w_models)
 
     assert classifier_dict is None, "Merger does not support being saved as a classifier yet!!!"
-    contribution['model'] = dict(zip(input_ids_, list(c.merged_ids)*n_inputs))
-    contribution['predictions'] = dict(zip(ids, pred))
-    contribution['gt'] = dict(zip(ids, gt))
+    contribution['model'] = dict(zip(Ids, list(c.merged_ids)*len(Ids)))
+    contribution['predictions'] = dict(zip(Ids, pred))
+    contribution['gt'] = dict(zip(Ids, Gt))
 
     return contribution
