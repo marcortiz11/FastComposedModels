@@ -47,7 +47,7 @@ def update_metrics_classifier(m, c_dict, predictions, gt, n_inputs):
 def create_metrics_classifier(c_dict, predictions, gt, n_inputs):
     m = Metrics()
     m.instances = n_inputs
-    m.ops = c_dict['metrics']['ops']
+    m.ops = c_dict['metrics']['ops'] * n_inputs
     m.params = c_dict['metrics']['params']
     m.accuracy = np.sum(predictions == gt)/n_inputs if n_inputs > 0 else 0
     m.time = c_dict['metrics']['time']/128 * n_inputs
