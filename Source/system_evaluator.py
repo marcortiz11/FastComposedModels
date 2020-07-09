@@ -67,7 +67,7 @@ def update_metrics_system(results, c_dict, n_inputs, phase="test", input_ids=[])
     results['system'].time_max += np.max(c_dict['metrics']['times']) / 128 * n_inputs
     results['system'].time_min += np.min(c_dict['metrics']['times']) / 128 * n_inputs
     results['system'].time_std += np.std(c_dict['metrics']['times']) / 128 * n_inputs
-    results['system'].ops += c_dict['metrics']['ops']
+    results['system'].ops += c_dict['metrics']['ops'] * n_inputs
 
 
 def check_valid_classifier_structure(c_dict):
