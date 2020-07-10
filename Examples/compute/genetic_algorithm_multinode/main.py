@@ -1,7 +1,7 @@
-import Examples.compute.bagging_boostgin_of_chains_GA.main as main
+import Examples.compute.bagging_boostgin_of_chains_GA.main_binarysearch_threshold as main
 import Examples.metadata_manager_results as manager_results
 import Source.genetic_algorithm.selection as selection
-import Source.genetic_algorithm.fitting_functions as fit_fun
+from Source.genetic_algorithm.fitting_functions import f1_time_param_penalization as fit
 import Source.io_util as io
 from mpi4py import MPI
 import numpy as np
@@ -38,7 +38,7 @@ def multinode_earn(comm):
     if r == 0:
         P = main.generate_initial_population()
         R = main.evaluate_population(P, phases=["val", "test"])
-        P_fit = fit_fun.f1_time_param_penalization(R, main.args.a)
+        P_fit = fit(R, main.args.a)
         R_dict = {}  # Evaluation results
 
         for i, p in enumerate(P):
@@ -62,8 +62,9 @@ def multinode_earn(comm):
         # 3) Every Node: Generate and evaluate offspring and fitness
         P_offspring_worker = main.generate_offspring(P, P_fit, O)
         R_offspring_worker = main.evaluate_population(P_offspring_worker, phases=["val", "test"])
-        fit_offspring_worker = fit_fun.f1_time_param_penalization(R_offspring_worker, main.args.a)
-        worker_data = {'offspring': P_offspring_worker, 'fitness': fit_offspring_worker, 'R': R_offspring_worker}
+        # fit_offspring_worker = fit_fun.f1_time_param_penalization(R_offspring_worker, main.args.a)
+        # worker_data = {'offspring': P_offspring_worker, 'fitness': fit_offspring_worker, 'R': R_offspring_worker}
+        worker_data = {'offspring': P_offspring_worker, 'R': R_offspring_worker}
 
         # 4) Send work back to manager node (rank=0)
         workers_data = comm.gather(worker_data, root=0)
@@ -72,15 +73,15 @@ def multinode_earn(comm):
         if r == 0:
             P_offspring = []
             R_offspring = []
-            fit_offspring = []
+            # fit_offspring = []
             for work in workers_data:
                 P_offspring = P_offspring + work['offspring']
                 R_offspring = R_offspring + work['R']
-                fit_offspring = fit_offspring + work['fitness']
+                # fit_offspring = fit_offspring + work['fitness']
 
             P_generation = P + P_offspring
             R_generation = R + R_offspring
-            fit_generation = P_fit + fit_offspring
+            fit_generation = fit(R_generation, main.args.a)
 
             if main.args.selection == "nfit":
                 best = selection.most_fit_selection(fit_generation, main.args.population)
@@ -98,7 +99,7 @@ def multinode_earn(comm):
             # Save which individuals alive every iteration
             ids = [p.get_sysid() for p in P]
             individuals_fitness_per_generation += [(ids, P_fit)]
-            
+
             print("Iteration %d" % epoch)
             print("TIME: Seconds per generation: %f " % (time.time() - start))
 
