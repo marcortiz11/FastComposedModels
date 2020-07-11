@@ -26,6 +26,7 @@ def plot_accuracy_parameters_front_line(front, color='black', label="Solution se
     Y = Y[:-1]
     plt.plot(X, Y, color=color, label=label)
 
+
 def plot_accuracy_parameters(record, color='black', label="Solution set 1"):
     plt.title("Solution Space")
     plt.xlabel("Resource")
@@ -37,6 +38,7 @@ def plot_accuracy_parameters(record, color='black', label="Solution set 1"):
         X.append(record[key].test['system'].params)
         Y.append(record[key].test['system'].accuracy)
     plt.scatter(X, Y, color=color, s=20, label=label)
+
 
 def plot_accuracy_time(record, color='black', label="Solution set 1"):
     plt.title("Solution Space")
