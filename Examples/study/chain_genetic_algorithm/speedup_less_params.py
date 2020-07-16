@@ -31,11 +31,16 @@ if __name__ == "__main__":
     query_params = {
         'dataset': "sota_models_caltech256-32-dev_validation",
         'selection': 'nfit',
-        'comment': 'Bagging_chains_Optimization_acc',
-        'iterations': 200,
-        'a': 5,
+        'experiment': 'bagging_boosting_of_chains_GA_1',
+        'iterations': 80,
+        'a':  [
+                1.0,
+                0.0,
+                0.0,
+            ],
+        'k': 4
     }
-    num = 3
+    num = 1
 
     sys.modules['Source'] = sys.modules['Source']
 
@@ -73,7 +78,7 @@ if __name__ == "__main__":
         front_GA = front.get_front_time_accuracy(GA_chains, phase="test")
         list_chain_res = list(GA_chains.values())
         list_chain_keys = list(GA_chains.keys())
-        list_fit_vals = np.array(fit_fun.f1_accuracy(list_chain_res, query_params['a'], 'test'))*-1
+        list_fit_vals = np.array(fit_fun.f2_time_param_penalization(list_chain_res, query_params['a'], 'test'))*-1
         sorted = np.argsort(list_fit_vals)
 
         for id in sorted:
@@ -97,5 +102,3 @@ if __name__ == "__main__":
         print("\tAvg acc increase:", stats.mean(acc_increase))
     else:
         print("No data available")
-
-
