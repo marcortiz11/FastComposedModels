@@ -53,8 +53,8 @@ class SystemBuilder:
 
 	def add_merger(self, merger):
 		self.__check_existence(merger)
-		assert len(merger.merged_ids) > 1, \
-			"ERROR in Merger" + merger.id + ": Merger should have at least two classifiers"
+		if len(merger.merged_ids) > 1:
+			warnings.warn(merger.id + ": Merger should have at least two classifiers")
 		system = self.__deserialize()
 		system.merger.extend([merger])
 		self.__serialize(system)
