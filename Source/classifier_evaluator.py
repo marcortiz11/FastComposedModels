@@ -13,6 +13,7 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids, pha
     n_inputs = len(input_ids_)
 
     predictions = np.argmax(L, axis=1)
+
     if c.id not in results:
         results[c.id] = eval.create_metrics_classifier(c_dict, predictions, gt, n_inputs)
     else:

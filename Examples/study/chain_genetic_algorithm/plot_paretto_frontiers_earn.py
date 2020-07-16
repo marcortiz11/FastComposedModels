@@ -256,14 +256,16 @@ def plot_acc_time_param_tradeoff(evaluation_results):
 
 
 if __name__ == "__main__":
-    experiment = 'chain_genetic_algorithm'
-    id = 54099516605262
+    plt.rcParams.update({'font.size': 6})
+
+    experiment = 'genetic_algorithm_multinode'
+    id = 7870634831684112
     experiment_dir = os.path.join(os.environ['FCM'], 'Examples', 'compute', experiment)
     meta_data_file = os.path.join(experiment_dir, 'results', 'metadata.json')
     earn_evaluations_location = results_manager.get_results_by_id(meta_data_file, id)
 
     sys.modules['Source'] = Source  # Due to refactor of the module
-    earn_evaluations = io.read_pickle(earn_evaluations_location)
+    earn_evaluations = io.read_pickle(earn_evaluations_location + '/results_ensembles.pkl')
     ax = plot_acc_time_param_tradeoff(earn_evaluations)
 
     """
