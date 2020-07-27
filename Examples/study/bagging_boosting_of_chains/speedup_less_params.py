@@ -1,5 +1,5 @@
-import Examples.paretto_front as front
-import Examples.metadata_manager_results as results_manager
+import Examples.study.paretto_front as front
+import Examples.study.metadata_manager_results as results_manager
 import Source.genetic_algorithm.fitting_functions as fit_fun
 from Source.system_evaluator_utils import pretty_print
 import Source.io_util as io
@@ -13,32 +13,39 @@ def print_metrics_model(id, r):
     print()
     print(id)
     print("\t Test accuracy: %f" % r.test['system'].accuracy)
-    if 'trigger' in id:
-        for classifier in r.test:
+    for classifier in r.test:
+        if 'trigger' not in classifier:
             print("\t\t Test accuracy %s: %f" % (classifier, r.test[classifier].accuracy))
 
     print("\t Model parameters: %f" % (r.test['system'].params/1e6))
-    if 'trigger' in id:
-        for classifier in r.test:
+    for classifier in r.test:
+        if 'trigger' not in classifier:
             print("\t\t Model parameters %s: %f * 1e6" % (classifier, r.test[classifier].params/1e6))
 
-    print("\t Average inference time: %f ms" % (r.test['system'].time/5))
+    print("\t Instances processed: %d" % (r.test['system'].instances))
+    for classifier in r.test:
+        if 'trigger' not in classifier:
+            print("\t\tInstances processed %s: %d" % (classifier, r.test[classifier].instances))
+
+    print("\t Dataset Evaluation time: %f s" % (r.test['system'].time))
 
 
 if __name__ == "__main__":
 
-    experiment = 'genetic_algorithm_multinode'
+    experiment = 'bagging_boosting_of_chains_GA'
     query_params = {
-        'dataset': "sota_models_caltech256-32-dev_validation",
+        'dataset': "sota_models_stl10-32-dev_validation",
         'selection': 'nfit',
         'experiment': 'bagging_boosting_of_chains_GA_1',
-        'iterations': 80,
+        'iterations': 200,
         'a':  [
-                1.0,
-                0.0,
-                0.0,
+                0.9,
+                0.1,
+                0,
             ],
-        'k': 4
+        'k': 10,
+        'population': 1000,
+        'offspring': 500
     }
     num = 1
 
@@ -68,6 +75,12 @@ if __name__ == "__main__":
     params = accurate_NN_result.test['system'].params
     print_metrics_model(sorted_models_front[-1][0], accurate_NN_result)
 
+    from Examples.compute.bagging_boosting_of_chains_GA.main import Limit
+    from Examples.compute.bagging_boosting_of_chains_GA.main import update_limit
+    limit = Limit()
+    update_limit(limit, models, phase='test')
+
+
     # 3) Speedup and Parameter decrease
     speedup = []
     param_incrase = []
@@ -75,16 +88,15 @@ if __name__ == "__main__":
 
     for res_loc in GA_res_loc:
         GA_chains = io.read_pickle(res_loc)
-        front_GA = front.get_front_time_accuracy(GA_chains, phase="test")
         list_chain_res = list(GA_chains.values())
         list_chain_keys = list(GA_chains.keys())
-        list_fit_vals = np.array(fit_fun.f2_time_param_penalization(list_chain_res, query_params['a'], 'test'))*-1
+        list_fit_vals = np.array(fit_fun.f2_time_param_penalization(list_chain_res, query_params['a'], limit, 'test'))*-1
         sorted = np.argsort(list_fit_vals)
 
         for id in sorted:
             speedup_chain_id = list_chain_keys[id]
             speedup_chain_result = GA_chains[speedup_chain_id]
-            if speedup_chain_result.test['system'].accuracy > acc:
+            if True: #speedup_chain_result.test['system'].accuracy > acc:
                 break
 
         print_metrics_model(speedup_chain_id, speedup_chain_result)

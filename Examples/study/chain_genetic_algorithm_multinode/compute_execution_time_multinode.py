@@ -1,5 +1,5 @@
 import Source.io_util as io
-import os, json
+import json
 
 def get_n_maximum(iteration_partial_results, n_nodes):
     time = [r['exec_time'] for n, r in iteration_partial_results.items() if n != 'selection']
@@ -35,6 +35,6 @@ if __name__ == "__main__":
     print("Execution time: %f" % execution_time)
 
     # Plot solutions
-    import Examples.plot as myplt
+    import Examples.study.plot as myplt
     myplt.plot_accuracy_time_old(R_all)
     myplt.show()

@@ -3,7 +3,7 @@ import Source.system_builder as sb
 import Source.make_util as make
 import Source.io_util as io
 import Source.system_evaluator as eval
-import Examples.metadata_manager_results as manager_results
+import Examples.study.metadata_manager_results as manager_results
 import os, random
 
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
             os.makedirs(out_dir)
         #########################################################################
 
-        import Examples.paretto_front as paretto
+        import Examples.study.paretto_front as paretto
         R_models = {}
         for model in models:
             sys = sb.SystemBuilder(verbose=False)

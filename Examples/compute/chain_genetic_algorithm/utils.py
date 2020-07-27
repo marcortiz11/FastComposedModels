@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import Examples.paretto_front as front_tools
+import Examples.study.paretto_front as front_tools
 import Examples.compute.fully_connected_chain.results_study as rs
 import os, random
 

@@ -2,7 +2,7 @@ import Source.io_util as io
 import Source.make_util as make
 import Source.system_builder_serializable as sb
 import Source.system_evaluator as se
-import Examples.metadata_manager_results as results_manager
+import Examples.study.metadata_manager_results as results_manager
 import os
 
 

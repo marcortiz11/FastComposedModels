@@ -1,10 +1,9 @@
-import Examples.compute.bagging_boostgin_of_chains_GA.main_binarysearch_threshold as main
-import Examples.metadata_manager_results as manager_results
+import Examples.compute.bagging_boosting_of_chains_GA.main as main
+import Examples.study.metadata_manager_results as manager_results
 import Source.genetic_algorithm.selection as selection
 from Source.genetic_algorithm.fitting_functions import f1_time_param_penalization as fit
 import Source.io_util as io
 from mpi4py import MPI
-import numpy as np
 import sys, random, os, time
 
 

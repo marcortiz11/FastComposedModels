@@ -1,5 +1,5 @@
-import Examples.paretto_front as front
-import Examples.metadata_manager_results as results_manager
+import Examples.study.paretto_front as front
+import Examples.study.metadata_manager_results as results_manager
 import Source.io_util as io
 import statistics as stats
 import os

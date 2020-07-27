@@ -1,7 +1,6 @@
-import Examples.plot as myplt
-import Examples.paretto_front as front
+import Examples.study.plot as myplt
 import Source.io_util as io
-import Examples.paretto_front as paretto
+import Examples.study.paretto_front as paretto
 import numpy as np
 import matplotlib.pyplot as plt
 

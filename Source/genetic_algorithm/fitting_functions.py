@@ -1,15 +1,59 @@
-import Source.system_evaluator as eval
+
+class Transform:
+
+    def set_max_features(self, max):
+        assert len(max) > 0, "Should be a list"
+        self.max = max
+
+    def set_min_features(self, min):
+        assert len(min) > 0, "Should be a list"
+        self.min = min
+
+    def scale(self, *features):
+        assert len(features) == len(self.max)
+
+        scaled = []
+        for fi, f in enumerate(features):
+            scaled.append(f/self.max[fi])
+        return scaled
+
+    def min_max_normalize(self, *features):
+        assert len(features) == len(self.max) and len(features) == len(self.min)
+
+        min_max_normalized = []
+        for fi, f in enumerate(features):
+            assert self.min < f < self.max, "Features in different order"
+            min_max_normalized.append((f - self.min[fi]) / (self.max[fi] - self.min[fi]))
+        return min_max_normalized
 
 
-def f1_time_param_penalization(P_r, w=[0.33, 0.33, 0.33], phase="val"):
+def make_limits_dict():
+
+    limits = {'max_accuracy': None,
+              'min_accuracy': None,
+              'max_time': None,
+              'min_time': None,
+              'max_params': None,
+              'min_params': None,
+              'max_ops': None,
+              'min_ops': None
+              }
+
+    return limits
+
+
+def f1_time_param_penalization(P_r, w, limits, phase="val"):
 
     """
-    Fit() = w1*scale(acc) + w2*scale(time) + w3*scale(params)
+    Computes a numerical fitness value regarding 3 objectives:
+        Fit() = w1*norm(acc) + w2*norm(time) + w3*norm(params)
+    The three: acc, time and params are scaled regarding values specified in limits
 
-    :param P_r: Population evaluation results R
-    :param w: Weights for accuracy and time objectives
-    :param phase: Compute fitness based on train, test or validation splits
-    :return: fitness values for each individual
+    :param P_r: Evaluated results of population P
+    :param w: Weights rewarding/penalizing each objective
+    :param limits: Scaling constants
+    :param phase: Dataset split. Train/Test/Validation
+    :return: A python list ==> fitness value for each individual
     """
 
     assert len(w) == 3, "Lenth of w should be = 3"
@@ -35,40 +79,45 @@ def f1_time_param_penalization(P_r, w=[0.33, 0.33, 0.33], phase="val"):
     return fit
 
 
-def f2_time_param_penalization(P_r, w=[0.33, 0.33, 0.33], phase="val"):
+def f2_time_param_penalization(P_r, w, limits, phase="val"):
 
     """
+    Computes a numerical fitness value regarding 3 objectives:
+        Fit() = w1*norm(acc) + w2*norm(time) + w3*norm(params)
+    The three: acc, time and params are normalized with min-max normalization
 
-    Fit() = w1*norm(acc) + w2*norm(time) + w3*norm(params)
-
-    :param P_r: Population evaluation results R
-    :param w: Weights for accuracy and time objectives
-    :param phase: Compute fitness based on train, test or validation splits
-    :return: fitness values for each individual
+    :param P_r: Evaluated results of population P
+    :param w: Weights rewarding/penalizing each objective
+    :param limits: min&max constants for normalizaing
+    :param phase: Dataset split. Train/Test/Validation
+    :return: A python list ==> fitness value for each individual
     """
 
     assert len(w) == 3, "Lenth of w should be = 3"
-    assert phase == "val" or phase == "test", "ERROR: Fitness computed on test or validation splits"
+    assert phase == "val" or phase == "test" or phase == "train", "ERROR: Fitness computed on test or validation splits"
 
     fit = [0] * len(P_r)
-    max_time = max([i.val['system'].time if phase == 'val' else i.test['system'].time for i in P_r])
-    min_time = min([i.val['system'].time if phase == 'val' else i.test['system'].time for i in P_r])
-    max_params = max([i.val['system'].params if phase == 'val' else i.test['system'].params for i in P_r])
-    min_params = min([i.val['system'].params if phase == 'val' else i.test['system'].params for i in P_r])
-    max_acc = max([i.val['system'].accuracy if phase == 'val' else i.test['system'].accuracy for i in P_r])
-    min_acc = min([i.val['system'].accuracy if phase == 'val' else i.test['system'].accuracy for i in P_r])
 
     for i_ind, i in enumerate(P_r):
 
         if phase == 'val':
-            acc = (i.val['system'].accuracy - min_acc)/(max_acc - min_acc)
-            inference_time = 1 - (i.val['system'].time - min_time)/(max_time - min_time)
-            model_params = 1 - (i.val['system'].params - min_params)/(max_params - min_params)
+            absolute_acc = i.val['system'].accuracy
+            absolute_time = i.val['system'].time
+            absolute_params = i.val['system'].params
+        elif phase == 'test':
+            absolute_acc = i.test['system'].accuracy
+            absolute_time = i.test['system'].time
+            absolute_params = i.test['system'].params
         else:
-            acc = (i.test['system'].accuracy - min_acc) / (max_acc - min_acc)
-            inference_time = 1 - (i.test['system'].time - min_time) / (max_time - min_time)
-            model_params = 1 - (i.test['system'].params - min_params) / (max_params - min_params)
+            absolute_acc = i.train['system'].accuracy
+            absolute_time = i.train['system'].time
+            absolute_params = i.train['system'].params
 
-        fit[i_ind] = pow((w[0] * acc) + (w[1] * inference_time) + (w[2] * model_params), 3)
+        relative_acc = (absolute_acc - limits['min_accuracy'])/(limits['max_accuracy'] - limits['min_accuracy'])
+        relative_inference_time = (absolute_time - limits['max_time'])/(limits['min_time'] - limits['max_time'])
+        relative_model_params = (absolute_params - limits['max_params'])/(limits['min_params'] - limits['max_params'])
+
+        fit[i_ind] = pow((w[0] * relative_acc) + (w[1] * relative_inference_time) + (w[2] * relative_model_params), 3)
+
     return fit
 

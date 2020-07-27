@@ -47,11 +47,11 @@ def plot_accuracy_parameters(record, system_color="green", label=None):
 
     X = [record[key]['system'].params for key in modified_keys]
     Y = [record[key]['system'].accuracy for key in modified_keys]
-    plt.scatter(X, Y, color='red', s=10, alpha=1)
+    plt.scatter(X, Y, color='black', s=10, alpha=1)
 
     X = [record[key]['system'].params for key in ref_keys]
     Y = [record[key]['system'].accuracy for key in ref_keys]
-    plt.scatter(X, Y, color='red', s=10, alpha=1)
+    plt.scatter(X, Y, color='black', s=10, alpha=1)
 
 
 def plot_accuracy_time(record, system_color='green', label=None):
@@ -72,21 +72,21 @@ def plot_accuracy_time(record, system_color='green', label=None):
 
     X = [record[key]['system'].time for key in modified_keys]
     Y = [record[key]['system'].accuracy for key in modified_keys]
-    plt.scatter(X, Y, color='red', s=50, alpha=1, label=label)
+    plt.scatter(X, Y, color='black', marker='p', s=80, alpha=1, label=label)
 
     X = [record[key]['system'].time for key in ref_keys]
     Y = [record[key]['system'].accuracy for key in ref_keys]
-    plt.scatter(X, Y, color='red', s=50, alpha=1, label=label)
+    plt.scatter(X, Y, color='black', marker='p', s=80, alpha=1, label=label)
 
 
-def plot_accuracy_parameters_time(record, title):
+def plot_accuracy_parameters_time(record, title, system_color='blue', label=None, phase="test"):
     plt.subplot(1, 2, 1)
-    plot_accuracy_time_old(record, title)
+    plot_accuracy_time_old(record, title, system_color=system_color, label=label, phase=phase)
     plt.subplot(1, 2, 2)
-    plot_accuracy_parameters_old(record, title)
+    #plot_accuracy_parameters_old(record, title, system_color=system_color, label=label)
 
 
-def plot_accuracy_time_old(record, title, system_color='blue', label=None, s=2):
+def plot_accuracy_time_old(record, title, system_color='blue', label=None, phase="test"):
     plt.title(title)
     plt.xlabel("Seconds")
     plt.ylabel("Accuracy")
@@ -94,13 +94,14 @@ def plot_accuracy_time_old(record, title, system_color='blue', label=None, s=2):
     system_keys = [key for key in record.keys() if len(record[key].test) > 2]
     ref_keys = [key for key in record.keys() if key not in system_keys]
 
-    X = [record[key].test['system'].time for key in system_keys]
-    Y = [record[key].test['system'].accuracy for key in system_keys]
-    plt.scatter(X, Y, color=system_color, s=s, alpha=1, label=label)
+    X = [record[key].test['system'].time if phase == 'test' else record[key].val['system'].time for key in system_keys]
+    Y = [record[key].test['system'].accuracy if phase == 'test' else record[key].val['system'].accuracy for key in system_keys]
+    plt.scatter(X, Y, color=system_color, s=2, alpha=1, label=label)
 
-    X = [record[key].test['system'].time for key in ref_keys]
-    Y = [record[key].test['system'].accuracy for key in ref_keys]
-    plt.scatter(X, Y, color='red', s=20, alpha=1, label=label)
+    X = [record[key].test['system'].time if phase == 'test' else record[key].val['system'].time for key in ref_keys]
+    Y = [record[key].test['system'].accuracy if phase == 'test' else record[key].val['system'].accuracy for key in ref_keys]
+    plt.scatter(X, Y, color='black', edgecolors='gray', s=40, alpha=1)
+    plt.legend()
 
 
 def plot_accuracy_parameters_old(record, title, system_color="blue", label=None):
@@ -118,7 +119,7 @@ def plot_accuracy_parameters_old(record, title, system_color="blue", label=None)
 
     X = [record[key].test['system'].params for key in ref_keys]
     Y = [record[key].test['system'].accuracy for key in ref_keys]
-    plt.scatter(X, Y, color='red', s=20)
+    plt.scatter(X, Y, color='black', s=20)
 
 
 def show():

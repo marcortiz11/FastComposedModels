@@ -246,7 +246,7 @@ if __name__ == "__main__":
         iteration += 1
 
     # Save the results
-    import Examples.metadata_manager_results as manager_results
+    import Examples.study.metadata_manager_results as manager_results
     meta_data_file = os.path.join(os.environ['FCM'],
                                   'Examples',
                                   'compute',

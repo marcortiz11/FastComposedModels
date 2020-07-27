@@ -1,7 +1,7 @@
 import Source.io_util as io
 import Source.genetic_algorithm.fitting_functions as fit_fun
-import Examples.paretto_front as front
-import Examples.metadata_manager_results as results_manager
+import Examples.study.paretto_front as front
+import Examples.study.metadata_manager_results as results_manager
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os
@@ -258,8 +258,8 @@ def plot_acc_time_param_tradeoff(evaluation_results):
 if __name__ == "__main__":
     plt.rcParams.update({'font.size': 6})
 
-    experiment = 'genetic_algorithm_multinode'
-    id = 7870634831684112
+    experiment = 'bagging_boosting_of_chains_GA'
+    id = 3034243351964892
     experiment_dir = os.path.join(os.environ['FCM'], 'Examples', 'compute', experiment)
     meta_data_file = os.path.join(experiment_dir, 'results', 'metadata.json')
     earn_evaluations_location = results_manager.get_results_by_id(meta_data_file, id)
