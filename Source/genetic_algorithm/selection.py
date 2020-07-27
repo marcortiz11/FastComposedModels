@@ -1,4 +1,3 @@
-# Delete Data from triggers from not selected individuals!!!!!
 import numpy as np
 
 
@@ -65,6 +64,18 @@ def most_fit_selection(fit_vals, num_population):
     return selected_ids
 
 
+def linear_rank_selection(fit_vals, n_survivors):
+    if n_survivors < len(fit_vals):
+        N = len(fit_vals)
+        S = np.argsort(fit_vals)
+        P = [1/N * (2 * (i/(N-1))) for i in range(N)]
+        selected = np.random.choice(N, n_survivors, p=P, replace=False)
+        ids = [S[i] for i in selected]
+        return ids
+    else:
+        return list(range(len(fit_vals)))
+
+
 def tournament_selection(fit_vals, K, p=0.8):
     """
     :param fit_vals: Fitness values of individuals
@@ -86,4 +97,4 @@ def tournament_selection(fit_vals, K, p=0.8):
 
 
 if __name__ == "__main__":
-    tournament_selection([0.8, 0.75, 0.65, 0.2, 0.93, 0.89, 0.56, 0.32], 5)
+    linear_rank_selection([0.8, 0.75, 0.65, 0.2, 0.93, 0.89, 0.56, 0.32], 3)

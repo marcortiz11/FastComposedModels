@@ -21,16 +21,17 @@ def argument_parse(argv):
     parser.add_argument("--offspring", default=500, type=int, help="Children generated at each generation")
     parser.add_argument("--iterations", default=40, type=int, help="Number of iterations before finishing algorithm")
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
-    parser.add_argument("--pm", default=0.8, type=float, help="Probability of mutation")
-    parser.add_argument("--pc", default=0.2, type=float, help="Probability of crossing/breeding")
+    parser.add_argument("--pm", default=0.9, type=float, help="Probability of mutation")
+    parser.add_argument("--pc", default=0.1, type=float, help="Probability of crossing/breeding")
     parser.add_argument("--selection", default="nfit", type=str, help="Most fit selection (mfit) or roulette (roulette)")
     parser.add_argument("--a", nargs='+', default=[5/7, 1/7, 1/7], type=float, help="Fitting function's weight")
-    parser.add_argument("--k", default=10, type=int, help="Tournament size")
+    parser.add_argument("--k", default=50, type=int, help="Tournament size")
     # Execution parameters
     parser.add_argument("--plot", default=0, type=int, help="Plot the ensembles generated every generation")
     parser.add_argument("--cores", default=0, type=int, help="Parallel evaluation of the ensembles")
     parser.add_argument("--device", default="none", type=str, help="Device where to execute the ensembles (cpu, gpu or none)")
-    parser.add_argument("--comment", default="", type=str, help="Meaningful comments about the run")
+    parser.add_argument("--comment", default="", type=str, help="")
+    parser.add_argument("--experiment", default="bagging_boosting_of_chains_GA_1")
 
     return parser.parse_args(argv)
 
@@ -57,11 +58,12 @@ def generate_initial_population():
 def mutation_operation(P, fit_vals):
 
     offspring = []
-    # p = P[selection.spin_roulette(fit_vals)]
     p = P[random.randint(0, len(P) - 1)]
 
+    operation = random.randint(0, 3) if len(p.get_message().merger) == 1 else random.randint(0, 2)
+
     # Extend a chain
-    if args.pm > 0:
+    if operation == 0:
         new_p = p.copy()
 
         # Pick a random classifier from the pool of solutions
@@ -81,7 +83,7 @@ def mutation_operation(P, fit_vals):
         offspring.append(new_p)
 
     # Replace a classifier
-    if args.pm > 0:
+    if operation == 1:
         new_p = p.copy()
         c_id_existing = utils.pick_random_classifier(args, new_p)
         c_file_new = utils.pick_random_classifier(args)
@@ -91,7 +93,7 @@ def mutation_operation(P, fit_vals):
         offspring.append(new_p)
 
     # Update threshold
-    if args.pm > 0:
+    if operation == 2:
         new_p = p.copy()
         sign = 2*(random.random() > 0.5) - 1
         om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th)
@@ -99,8 +101,7 @@ def mutation_operation(P, fit_vals):
         offspring.append(new_p)
 
     # Add classifier to be merged (Assuming 1 merger)
-    if args.pm > 0 and len(p.get_message().merger) == 1:
-
+    if operation == 3:
         merger = p.get_message().merger[0]
         merger_id = merger.id
         merger_number_chains = len(merger.merged_ids)
@@ -131,8 +132,8 @@ def crossover_operation(P, fit_vals):
 
         ai = bi = 0
         while ai == bi:
-            ai = selection.tournament_selection(Fit_chains, min(len(Fit_chains)/2, args.k))
-            bi = selection.tournament_selection(Fit_chains, min(len(Fit_chains)/2, args.k))
+            ai = selection.tournament_selection(Fit_chains, min(len(Fit_chains)//2, args.k))
+            bi = selection.tournament_selection(Fit_chains, min(len(Fit_chains)//2, args.k))
 
         # i_chains = random.sample(range(0, len(P_chains)), 2)
 
@@ -225,6 +226,29 @@ def evaluate_population(P, phases=['test', 'val']):
     return R
 
 
+def update_limit(limit, R):
+
+    max_time = max([i.val['system'].time for k, i in R.items()])
+    min_time = min([i.val['system'].time for k, i in R.items()])
+    max_params = max([i.val['system'].params for k, i in R.items()])
+    min_params = min([i.val['system'].params for k, i in R.items()])
+    max_accuracy = max([i.val['system'].accuracy for k, i in R.items()])
+    min_accuracy = min([i.val['system'].accuracy for k, i in R.items()])
+
+    if 'max_accuracy' in limit:
+        limit['max_accuracy'] = max_accuracy
+    if 'min_accuracy' in limit:
+        limit['min_accuracy'] = min_accuracy
+    if 'max_time' in limit:
+        limit['max_time'] = max_time
+    if 'min_time' in limit:
+        limit['min_time'] = min_time
+    if 'max_params' in limit:
+        limit['max_params'] = max_params
+    if 'min_params' in limit:
+        limit['min_params'] = min_params
+
+
 if __name__ == "__main__":
 
     global args
@@ -237,26 +261,29 @@ if __name__ == "__main__":
     # Initial population
     P = generate_initial_population()
     R = evaluate_population(P)
-    fit = fit_fun.f1_time_param_penalization(R, args.a)
     P_all = []
+    individuals_fitness_per_generation = []
 
     # Evaluation Results Dictionary
     R_dict = {}
     R_dict_old = {}
     R_dict_models = dict(zip([p.get_sysid() for p in P], R))
+    R_dict_old.update(R_dict_models)
+    limits = fit_fun.make_limits_dict()
+    update_limit(limits, R_dict_models)
+
+    fit = fit_fun.f2_time_param_penalization(R, args.a, limits)
 
     # Start the loop over generations
     iteration = 0
     while iteration < args.iterations:
         start = time.time()
 
-        # Generate offspring (crossover+mutation
-        # )
+        # Generate offspring and evaluate
         P_offspring = generate_offspring(P, fit)
-        # Evaluate offspring
         R_offspring = evaluate_population(P_offspring)
-        # Evaluate offspring individuals
-        fit_offspring = fit_fun.f1_time_param_penalization(R_offspring, args.a)
+        fit_offspring = fit_fun.f2_time_param_penalization(R_offspring, args.a, limits)
+
         # Selection
         fit_generation = fit + fit_offspring
         P_generation = P + P_offspring
@@ -265,6 +292,8 @@ if __name__ == "__main__":
             selected = selection.most_fit_selection(fit_generation, args.population)
         else:
             selected = selection.roulette_selection(fit_generation, args.population)
+
+        # Population Generation i+1
         P = [P_generation[i] for i in selected]
         fit = [fit_generation[i] for i in selected]
         R = [R_generation[i] for i in selected]
@@ -277,14 +306,19 @@ if __name__ == "__main__":
         if args.plot:
             utils.plot_population(R_dict, R_dict_models, iteration)
 
+        # Save which individuals alive every iteration
+        ids = [p.get_sysid() for p in P]
+        individuals_fitness_per_generation += [(ids, fit)]
+
         # Info about current generation
         print("Iteration %d" % iteration)
         print("TIME: Seconds per generation: %f " % (time.time()-start))
 
         iteration += 1
 
+
     # Save the results
-    import Examples.metadata_manager_results as manager_results
+    import Examples.study.metadata_manager_results as manager_results
     meta_data_file = os.path.join(os.environ['FCM'],
                                   'Examples',
                                   'compute',
@@ -301,5 +335,7 @@ if __name__ == "__main__":
     R_dict_old.update(R_dict)
     params = args.__dict__
     manager_results.save_results(meta_data_file, meta_data_result, params, R_dict_old)
+    io.save_pickle(os.path.join(os.environ['FCM'], results_loc, 'individuals_fitness_per_generation.pkl'),
+                   individuals_fitness_per_generation)
 
 
