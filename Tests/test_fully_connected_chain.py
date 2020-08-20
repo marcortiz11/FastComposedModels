@@ -104,7 +104,6 @@ if __name__ == "__main__":
 
     # Test 5 -> Incrementing the threshold on a fully connected chain
     import numpy as np
-    import Examples.plot as plt
 
     R = {}
     for th in np.arange(0, 1.1, 0.1):

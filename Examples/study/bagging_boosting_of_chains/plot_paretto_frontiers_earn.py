@@ -1,7 +1,7 @@
 import Source.io_util as io
 import Source.genetic_algorithm.fitting_functions as fit_fun
 import Examples.study.paretto_front as front
-import Examples.study.metadata_manager_results as results_manager
+import Examples.metadata_manager_results as results_manager
 import matplotlib.pyplot as plt
 import numpy as np
 import sys, os

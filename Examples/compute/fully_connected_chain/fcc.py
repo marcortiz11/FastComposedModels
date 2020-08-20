@@ -3,7 +3,7 @@ import Source.system_builder as sb
 import Source.make_util as make
 import Source.io_util as io
 import Source.system_evaluator as eval
-import Examples.study.metadata_manager_results as manager_results
+import Examples.metadata_manager_results as manager_results
 import os, random
 
 

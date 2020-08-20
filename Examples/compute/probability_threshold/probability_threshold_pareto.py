@@ -3,10 +3,7 @@ import Source.system_builder as sb
 import Source.make_util as make
 import Source.io_util as io
 import Source.system_evaluator as eval
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-from threading import Thread, Lock
-import time, queue
+from threading import Lock
 import os
 
 
@@ -108,7 +105,7 @@ if __name__ == "__main__":
         if not os.path.exists(out_dir):
             os.mkdir(out_dir)
         #########################################################################
-        import Examples.paretto_front as paretto
+        import Examples.study.paretto_front as paretto
 
         R_models = {}
         for model in models:

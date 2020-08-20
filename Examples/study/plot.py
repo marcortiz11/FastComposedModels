@@ -1,5 +1,5 @@
 import numpy as np
-import Source.system_builder as sb
+import Source.system_builder_serializable as sb
 import Source.make_util as make
 import os
 import matplotlib.pyplot as plt

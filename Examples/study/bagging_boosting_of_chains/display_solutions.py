@@ -1,4 +1,4 @@
-import Examples.study.metadata_manager_results as results_manager
+import Examples.metadata_manager_results as results_manager
 import Examples.study.plot as myplt
 import Source.io_util as io
 import matplotlib.cm as cm

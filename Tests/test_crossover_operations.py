@@ -86,18 +86,20 @@ if __name__ == '__main__':
 
     chain1 = build_chain([c0_file, c2_file],
                       ['V001_DenseNet_s3_71', 'V001_DenseNet_s2_32'],
-                      [1.1],
-                      ['trigger_classifier_1.1_V001_DenseNet_s3_71'],
+                      [0.8],
+                      ['trigger_classifier_0.8_V001_DenseNet_s3_71'],
                       'test_crossover_chain1')
 
     R_chain0 = eval.evaluate(chain0, chain0.get_start())
     R_chain1 = eval.evaluate(chain1, chain1.get_start())
 
-    c = ob.singlepoint_crossover(chain0, chain1, 'V001_DenseNet_s3_71', 'V001_DenseNet_s3_71')
+    c = ob.singlepoint_crossover(chain0, chain1, 'V001_DenseNet_s1_3', 'V001_DenseNet_s3_71')
 
-    print(c[0].get_message())
+    from Examples.compute.chain_genetic_algorithm.utils import generate_system_id
+
+    print(generate_system_id(c[0]))
     print("---------------------------")
-    print(c[1].get_message())
+    print(generate_system_id(c[1]))
 
     R = eval.evaluate(c[0], c[0].get_start())
     R_ = eval.evaluate(c[1], c[1].get_start())

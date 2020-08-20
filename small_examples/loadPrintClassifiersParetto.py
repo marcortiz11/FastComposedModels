@@ -76,18 +76,8 @@ if __name__ == "__main__":
     # Get the CIFAR-100 models form the Classifiers dir
     import os
     Dataset_Path = "../Definitions/Classifiers/"
-    dsets = ["front45_models_validation",
-             "sota_models_cifar100-32-dev_validation",
-             "sota_models_cifar10-32-dev_validation",
-             "sota_models_fashion-mnist-32-dev_validation",
-             "sota_models_flowers102-32-dev_validation",
-             "sota_models_food101-32-dev_validation",
-             "sota_models_gtsrb-32-dev_validation",
-             "sota_models_gtsrbcrop-32-dev_validation",
-             "sota_models_mnist-32-dev_validation",
-             "sota_models_stl10-32-dev_validation",
-             "sota_models_caltech256-32-dev_validation",
-             "sota_models_svhn-32-dev_validation"]
+    dsets = [
+             "sota_models_caltech256-32-dev_validation"]
 
     records = {}
 
@@ -123,10 +113,10 @@ if __name__ == "__main__":
             os.makedirs('./models_evaluation/%s' % d)
         io.save_pickle('./models_evaluation/%s/models.pkl' % d, records)
 
-        """
+
         plot_accuracy_time(records)
         plt.legend()
         plt.show()
-        """
+
 
 
