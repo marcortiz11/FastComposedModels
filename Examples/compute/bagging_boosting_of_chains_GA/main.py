@@ -148,6 +148,45 @@ def crossover_operation(P, fit_vals):
     return offspring
 
 
+def crossover_operation_v2(P, fit_vals):
+
+    """
+    Elitism parental selection and crossover operation.
+    Two crossover operations:
+        1) Merge two parents, if parents are chains.
+        2) Exchange a part of the ensemble graph with single-point crossover, otherwise.
+    :param P: Population of ensembles (Objects of SystemBuilder)
+    :param fit_vals: Fitness values of the population (integer list)
+    :return: The offspring
+    """
+
+    offspring = []
+
+    ai = bi = 0
+    while ai == bi:
+        ai = selection.tournament_selection(fit_vals, min(len(fit_vals)//2, args.k))
+        bi = selection.tournament_selection(fit_vals, min(len(fit_vals)//2, args.k))
+    a = P[ai]
+    b = P[bi]
+
+    # If two parents are chains merge them
+    if len(a.get_message().merger) == 0 and len(b.get_message().merger) == 0:
+        o = ob.merge_two_chains(a, b)
+        offspring.append(o)
+
+    # Single-Point Crossover of two Ensembles
+    classifiersA = a.get_message().classifier
+    classifiersB = b.get_message().classifier
+    pointA = classifiersA[random.randint(0, len(classifiersA) - 1)].id
+    pointB = classifiersB[random.randint(0, len(classifiersB) - 1)].id
+    offspring += ob.singlepoint_crossover(a, b, pointA, pointB)
+
+    for o in offspring:
+        o.set_sysid(utils.generate_system_id(o))
+
+    return offspring
+
+
 def generate_offspring(P, fit_vals, o=None):
 
     if o is None:
@@ -161,7 +200,7 @@ def generate_offspring(P, fit_vals, o=None):
             for offspring in mutation_operation(P, fit_vals):
                 offspring_dict[offspring.get_sysid()] = offspring
         if args.pc > r:
-            for offspring in crossover_operation(P, fit_vals):
+            for offspring in crossover_operation_v2(P, fit_vals):
                 offspring_dict[offspring.get_sysid()] = offspring
 
     return [offspring for key, offspring in offspring_dict.items()]
@@ -226,29 +265,6 @@ def evaluate_population(P, phases=['test', 'val']):
     return R
 
 
-def update_limit(limit, R):
-
-    max_time = max([i.val['system'].time for k, i in R.items()])
-    min_time = min([i.val['system'].time for k, i in R.items()])
-    max_params = max([i.val['system'].params for k, i in R.items()])
-    min_params = min([i.val['system'].params for k, i in R.items()])
-    max_accuracy = max([i.val['system'].accuracy for k, i in R.items()])
-    min_accuracy = min([i.val['system'].accuracy for k, i in R.items()])
-
-    if 'max_accuracy' in limit:
-        limit['max_accuracy'] = max_accuracy
-    if 'min_accuracy' in limit:
-        limit['min_accuracy'] = min_accuracy
-    if 'max_time' in limit:
-        limit['max_time'] = max_time
-    if 'min_time' in limit:
-        limit['min_time'] = min_time
-    if 'max_params' in limit:
-        limit['max_params'] = max_params
-    if 'min_params' in limit:
-        limit['min_params'] = min_params
-
-
 if __name__ == "__main__":
 
     global args
@@ -270,7 +286,7 @@ if __name__ == "__main__":
     R_dict_models = dict(zip([p.get_sysid() for p in P], R))
     R_dict_old.update(R_dict_models)
     limits = fit_fun.make_limits_dict()
-    update_limit(limits, R_dict_models)
+    fit_fun.update_limit_dict(limits, R_dict_models, phase="val")
 
     fit = fit_fun.f2_time_param_penalization(R, args.a, limits)
 
@@ -318,7 +334,7 @@ if __name__ == "__main__":
 
 
     # Save the results
-    import Examples.study.metadata_manager_results as manager_results
+    import Examples.metadata_manager_results as manager_results
     meta_data_file = os.path.join(os.environ['FCM'],
                                   'Examples',
                                   'compute',

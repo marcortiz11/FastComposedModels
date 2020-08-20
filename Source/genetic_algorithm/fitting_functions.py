@@ -42,6 +42,29 @@ def make_limits_dict():
     return limits
 
 
+def update_limit_dict(limit, R, phase="val"):
+
+    max_time = max([i.val['system'].time if phase == "val" else i.test['system'].time for k, i in R.items()])
+    min_time = min([i.val['system'].time if phase == "val" else i.test['system'].time for k, i in R.items()])
+    max_params = max([i.val['system'].params if phase == "val" else i.test['system'].params for k, i in R.items()])
+    min_params = min([i.val['system'].params if phase == "val" else i.test['system'].params for k, i in R.items()])
+    max_accuracy = max([i.val['system'].accuracy if phase == "val" else i.test['system'].accuracy for k, i in R.items()])
+    min_accuracy = min([i.val['system'].accuracy if phase == "val" else i.test['system'].accuracy for k, i in R.items()])
+
+    if 'max_accuracy' in limit:
+        limit['max_accuracy'] = max_accuracy
+    if 'min_accuracy' in limit:
+        limit['min_accuracy'] = min_accuracy
+    if 'max_time' in limit:
+        limit['max_time'] = max_time
+    if 'min_time' in limit:
+        limit['min_time'] = min_time
+    if 'max_params' in limit:
+        limit['max_params'] = max_params
+    if 'min_params' in limit:
+        limit['min_params'] = min_params
+
+
 def f1_time_param_penalization(P_r, w, limits, phase="val"):
 
     """
@@ -117,7 +140,7 @@ def f2_time_param_penalization(P_r, w, limits, phase="val"):
         relative_inference_time = (absolute_time - limits['max_time'])/(limits['min_time'] - limits['max_time'])
         relative_model_params = (absolute_params - limits['max_params'])/(limits['min_params'] - limits['max_params'])
 
-        fit[i_ind] = pow((w[0] * relative_acc) + (w[1] * relative_inference_time) + (w[2] * relative_model_params), 3)
+        fit[i_ind] = (w[0] * relative_acc) + (w[1] * relative_inference_time) + (w[2] * relative_model_params)
 
     return fit
 

@@ -98,3 +98,4 @@ def tournament_selection(fit_vals, K, p=0.8):
 
 if __name__ == "__main__":
     linear_rank_selection([0.8, 0.75, 0.65, 0.2, 0.93, 0.89, 0.56, 0.32], 3)
+

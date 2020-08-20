@@ -1,5 +1,6 @@
 from Source.genetic_algorithm.operations_mutation import __make_data_and_dataset
 import Source.make_util as make
+from Examples.compute.chain_genetic_algorithm.utils import get_classifier_index
 import copy
 import os
 
@@ -28,46 +29,44 @@ def remove(a, point, first=True):
             remove(a, next, False)  # Removing connected components before
 
     # Finally remove myself
-    if not first:
-        a.remove(point)
-    else:
-        component.component_id = ''  # There's nothing after
-        a.remove(component.id)
-        a.replace(component.id, component)
+    a.remove(point)
 
 
-def merge_chains_by_point(a, b, pointA, pointB, sub_folder=None):
-    """
+"""
+def merge_chains_by_point(a, b, pointA, pointB):
+    
     :param a: Chain to be added part of chain b
     :param b: Chain b
     :param point: Point in the chain b form which to start adding
     :param sub_folder: Folder where trained trigger's classifiers are saved
     :return: New chain
-    """
+    
 
     next = [b.get(pointB).component_id] if b.get(pointB).component_id != '' else []
+    merge_level = pointA[0:2] if str.isdecimal(pointA[0]) else ''
 
     if len(next) > 0:
         th = float(next[0].split("_")[2])
         trigger_name = "trigger_classifier_" + str(th) + "_" + pointA
         trigger_classifier_file = os.path.join(os.environ['FCM'], os.environ['TMP'], trigger_name + '.pkl')
+        trigger_c_ids = [merge_level+id[2:] if str.isdecimal(id[0]) else id for id in b.get(next[0]).component_ids]
 
         if not os.path.exists(trigger_classifier_file):
             data = __make_data_and_dataset(a, pointA, a.get(pointA).classifier_file, th)
             a.add_data(data)  # TODO: Més eficient!
             trigger = make.make_trigger(trigger_name,
                                         make.make_empty_classifier(id="", data_id=data.id),
-                                        component_ids=b.get(next[0]).component_ids, model="probability")
+                                        component_ids=trigger_c_ids, model="probability")
         else:
             trigger = make.make_trigger(trigger_name,
                                         make.make_classifier('', classifier_file=trigger_classifier_file),
-                                        component_ids=b.get(next[0]).component_ids)
+                                        component_ids=trigger_c_ids)
 
         a.add_trigger(trigger)
         c = a.get(pointA)
         c.component_id = trigger_name
         a.replace(c.id, c)
-        next = trigger.component_ids
+        next = b.get(next[0]).component_ids
 
     while len(next) > 0:
         assert len(next) == 1, "ERROR: Support only for chain ensemble with crossover operations"
@@ -78,23 +77,108 @@ def merge_chains_by_point(a, b, pointA, pointB, sub_folder=None):
 
         if c.DESCRIPTOR.name == "Classifier":
             next = [c.component_id] if c.component_id != '' else []
+            c_.id = merge_level+c_.id[2:] if str.isdecimal(c_.id[0]) else c_.id
+            if c_.component_id != '':
+                c_.component_id = merge_level+c_.component_id[2:] if str.isdecimal(c_.component_id[0]) else c_.component_id
             a.add_classifier(c_)
 
         elif c.DESCRIPTOR.name == "Trigger":
             next = c.component_ids
+            c_.id = merge_level+c_.id[2:] if str.isdecimal(c_.id[0]) else c_.id
+            c_.component_ids[:] = [merge_level+id[2:] if str.isdecimal(id[0]) else id for id in c_.component_ids]
+            a.add_trigger(c_)
+"""
+
+
+def merge_chains_by_point_v2(a, b, pointA, pointB):
+    """
+    :param a: Chain to be added part of chain b
+    :param b: Chain b
+    :param point: Point in the chain b form which to start adding
+    :param sub_folder: Folder where trained trigger's classifiers are saved
+    :return: New chain
+    """
+
+    # Remove classifier
+    next = [pointB]
+    merge_level = pointA[0:2] if str.isdecimal(pointA[0]) else ''
+    a.remove(pointA)
+
+    # If point A was starter, set pointB as starter
+    if a.get_start() == pointA:
+        a.set_start(merge_level + (pointB[2:] if str.isdecimal(pointB[0]) else pointB))
+
+    # If is head of chain in merger change id to pointB
+    mergers = a.get_message().merger
+    for merger in mergers:
+       for idx, id in enumerate(merger.merged_ids):
+            if id == pointA:
+                merger.merged_ids[idx] = merge_level + (pointB[2:] if str.isdecimal(pointB[0]) else pointB)
+                a.replace(merger.id, merger)
+                break
+
+    # Trigger connected to classifier=pointA should be reconnected to point B
+    triggers = a.get_message().trigger
+    for trigger in triggers:
+        if pointA in trigger.component_ids:
+            trigger_ = copy.deepcopy(trigger)
+            trigger_.component_ids[0] = merge_level + (pointB[2:] if str.isdecimal(pointB[0]) else pointB)
+            a.replace(trigger.id, trigger_)
+            break
+
+    # Copy the tail of ensemble b from pointB
+    while len(next) > 0:
+        assert len(next) == 1, "ERROR: Support only for chain ensemble with crossover operations"
+
+        next_id = next[0]
+        c = b.get(next_id)
+        c_ = copy.deepcopy(c)
+
+        if c.DESCRIPTOR.name == "Classifier":
+            next = [c.component_id] if c.component_id != '' else []
+            c_.id = merge_level + (c_.id[2:] if str.isdecimal(c_.id[0]) else c_.id)
+            if c_.component_id != '':
+                aux = '_'.join(c_.component_id.split("_")[3:])
+                c_.component_id = "trigger_classifier_" + c_.component_id.split("_")[2] + "_" + merge_level + (aux[2:] if str.isdecimal(aux[0]) else aux)
+            a.add_classifier(c_)
+
+        elif c.DESCRIPTOR.name == "Trigger":
+            next = c.component_ids
+            c_.component_ids[:] = [merge_level + (id[2:] if str.isdecimal(id[0]) else id) for id in c_.component_ids]
+            aux = '_'.join(c_.id.split("_")[3:])
+            c_.id = "trigger_classifier_" + c_.id.split("_")[2] + "_" + merge_level + (aux[2:] if str.isdecimal(aux[0]) else aux)
             a.add_trigger(c_)
 
 
-def repeated_classifiers(a, b, pointB):
-    classifiers = [classifier.id for classifier in a.get_message().classifier]
-    next = [b.get(pointB).component_id] if b.get(pointB).component_id != '' else []  # Always should be a Classifier
+def repeated_classifiers(a, b, pointB, level):
 
+    # Point to the head of the chain in the ensemble
+    level = level[0:2] if str.isdecimal(level[0]) and level[1] == '_' else ""
+    if len(a.get_message().merger) > 0:
+        merger = a.get_message().merger[0]
+        for m_id in merger.merged_ids:
+            if m_id[0:2] == level or (level == "" and not str.isdecimal(m_id[0]) and not m_id[1] == "_"):
+                start_chain = m_id
+                break
+    else:
+        start_chain = a.get_start()
+
+    # Store all classifiers in the non-replaced part of the chain
+    i = 0
+    classifiers = []
+    while get_classifier_index(a, i, point=start_chain) is not None:
+        classifiers.append(get_classifier_index(a, i, start_chain))
+        i+=1
+    classifiers += [classifier[2:] for classifier in classifiers]
+
+    # Look for repetitions in classifiers when concatenating the two parts of chain a and chain b
+    next = [pointB]
     while len(next) > 0:
         assert len(next) == 1, "ERROR: Support only for chain ensemble with crossover operations"
         next_id = next[0]
         c = b.get(next_id)
         if c.DESCRIPTOR.name == "Classifier":
-            if c.id in classifiers:
+            if c.id in classifiers or c.id[2:] in classifiers:
                 return True
             next = [c.component_id] if c.component_id != '' else []
         elif c.DESCRIPTOR.name == "Trigger":
@@ -124,11 +208,11 @@ def singlepoint_crossover(a, b, pointA, pointB):
     remove(c2, pointB)
 
     # Only return plausible offspring (do not create offspring chains that have same classifier in the chain)
-    if not repeated_classifiers(c1, b, pointB):
-        merge_chains_by_point(c1, b, pointA, pointB)
+    if not repeated_classifiers(c1, b, pointB, pointA):
+        merge_chains_by_point_v2(c1, b, pointA, pointB)
         offspring += [c1]
-    if not repeated_classifiers(c2, a, pointA):
-        merge_chains_by_point(c2, a, pointB, pointA)
+    if not repeated_classifiers(c2, a, pointA, pointB):
+        merge_chains_by_point_v2(c2, a, pointB, pointA)
         offspring += [c2]
 
     return offspring

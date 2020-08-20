@@ -73,7 +73,7 @@ def pick_random_classifier(args, sys=None):
     return selected
 
 
-def get_classifier_index(chain, i):
+def get_classifier_index(chain, i, point=None):
 
     """
     :param chain: Ensemble chain
@@ -81,18 +81,23 @@ def get_classifier_index(chain, i):
     :return: The classifier id in the index i
     """
 
-    assert len(chain.get_message().classifier) > i, "ERROR: Index out of bounds"
-
     c = chain.get(chain.get_start())
-    next = c.component_id
-    i_ = 0
-    while i_ != i:
-        trigger = chain.get(next)
-        if trigger is None:
-            break
-        c = chain.get(trigger.component_ids[0])
+    if point is not None:
+        c = chain.get(point)
+    if c is not None:
         next = c.component_id
-        i_ += 1
+        i_ = 0
+        while i_ != i:
+            trigger = chain.get(next)
+            if trigger is None:
+                return None
+            c = chain.get(trigger.component_ids[0])
+            if c is None:
+                return None
+            next = c.component_id
+            i_ += 1
+    else:
+        return None
     return c.id
 
 
