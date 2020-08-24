@@ -34,15 +34,14 @@ if __name__ == "__main__":
 
     experiment = 'bagging_boosting_of_chains_GA'
     query_params = {
-        'dataset': "sota_models_cifar10-32-dev_validation",
+        'dataset': "sota_models_caltech256-32-dev_validation",
         'selection': 'nfit',
         'experiment': 'bagging_boosting_of_chains_GA_1',
         'iterations': 200,
-        'pm': 0.9,
         'a':  [
-                0.8,
-                0.2,
-                0,
+                1.0,
+                0.0,
+                0.0,
             ],
         'k': 10,
         'population': 1000,
@@ -66,7 +65,7 @@ if __name__ == "__main__":
     GA_res_loc = [os.path.join(path, 'results_ensembles.pkl') for path in GA_res_loc]
 
     # 2) Single Models
-    models = dict([(k, r) for k, r in io.read_pickle(GA_res_loc[0]).items() if len(r.test) < 3])
+    models = dict([(k, r) for k, r in io.read_pickle(GA_res_loc[0]).items() if len(r.val if phase == "val" else r.test) < 3])
     models_front = front.get_front_time_accuracy(models, phase=phase)
     sorted_models_front = front.sort_results_by_time(models_front, phase=phase)
 
@@ -95,19 +94,9 @@ if __name__ == "__main__":
         sorted = np.argsort(list_fit_vals)
         fittest_model_id = list_chain_keys[sorted[0]]
         fittest_model_result = GA_chains[fittest_model_id].val if phase == "val" else GA_chains[fittest_model_id].test
-
-        """
-        for id in sorted:
-            speedup_chain_id = list_chain_keys[id]
-            speedup_chain_result = GA_chains[speedup_chain_id]
-            if True:
-                break
-        """
-
         print_metrics_model(fittest_model_id, fittest_model_result)
 
-        # Compute increase in params
-        # pretty_print(fittest_model_result)
+        # Store improvements
         speedup.append(time/fittest_model_result['system'].time)
         param_incrase.append(fittest_model_result['system'].params/params)
         acc_increase.append(fittest_model_result['system'].accuracy-acc)

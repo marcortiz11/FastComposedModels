@@ -55,7 +55,7 @@ def generate_initial_population():
     return P
 
 
-def mutation_operation(P, fit_vals):
+def mutation_operation(P):
 
     offspring = []
     p = P[random.randint(0, len(P) - 1)]
@@ -197,7 +197,7 @@ def generate_offspring(P, fit_vals, o=None):
     while len(offspring_dict) < o:
         r = random.random()
         if args.pm > r:
-            for offspring in mutation_operation(P, fit_vals):
+            for offspring in mutation_operation(P):
                 offspring_dict[offspring.get_sysid()] = offspring
         if args.pc > r:
             for offspring in crossover_operation_v2(P, fit_vals):
@@ -292,7 +292,13 @@ if __name__ == "__main__":
 
     # Start the loop over generations
     iteration = 0
+    p_update = args.pm/args.iterations
     while iteration < args.iterations:
+
+        # Dynamic decreasing high mutation ratio (DHM)
+        args.pm -= p_update
+        args.pc += p_update
+
         start = time.time()
 
         # Generate offspring and evaluate
@@ -331,7 +337,6 @@ if __name__ == "__main__":
         print("TIME: Seconds per generation: %f " % (time.time()-start))
 
         iteration += 1
-
 
     # Save the results
     import Examples.metadata_manager_results as manager_results

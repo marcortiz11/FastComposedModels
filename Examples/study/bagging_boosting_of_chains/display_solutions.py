@@ -13,7 +13,7 @@ if __name__ == "__main__":
     experiment_dir = os.path.join(os.environ['FCM'], 'Examples', 'compute', experiment)
     meta_data_file = os.path.join(experiment_dir, 'results', 'metadata.json')
 
-    ids = [1005780872640552, ]
+    ids = [2279824459448011, 6554631785870981]
     cmap = cm.get_cmap('jet')
     colors = cmap(np.linspace(0, 1.0, len(ids)))
     labels = ["w1=1; w2=0", "w1=0.8; w2=0.2", "w1=0.7; w2=0.3", "w1=0.6; w2=0.4"]

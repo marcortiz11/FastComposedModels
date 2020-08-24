@@ -44,12 +44,21 @@ def make_limits_dict():
 
 def update_limit_dict(limit, R, phase="val"):
 
-    max_time = max([i.val['system'].time if phase == "val" else i.test['system'].time for k, i in R.items()])
-    min_time = min([i.val['system'].time if phase == "val" else i.test['system'].time for k, i in R.items()])
-    max_params = max([i.val['system'].params if phase == "val" else i.test['system'].params for k, i in R.items()])
-    min_params = min([i.val['system'].params if phase == "val" else i.test['system'].params for k, i in R.items()])
-    max_accuracy = max([i.val['system'].accuracy if phase == "val" else i.test['system'].accuracy for k, i in R.items()])
-    min_accuracy = min([i.val['system'].accuracy if phase == "val" else i.test['system'].accuracy for k, i in R.items()])
+    assert "train" == phase or "test" == phase or "val" == phase, "%s not in test, val or train" % phase
+
+    if phase == "val":
+        R_phase = [i.val for i in R.values()]
+    elif phase == "test":
+        R_phase = [i.test for i in R.values()]
+    else:
+        R_phase = [i.train for i in R.values()]
+
+    max_time = max([i['system'].time for i in R_phase])
+    min_time = min([i['system'].time for i in R_phase])
+    max_params = max([i['system'].params for i in R_phase])
+    min_params = min([i['system'].params for i in R_phase])
+    max_accuracy = max([i['system'].accuracy for i in R_phase])
+    min_accuracy = min([i['system'].accuracy for i in R_phase])
 
     if 'max_accuracy' in limit:
         limit['max_accuracy'] = max_accuracy
@@ -117,12 +126,11 @@ def f2_time_param_penalization(P_r, w, limits, phase="val"):
     """
 
     assert len(w) == 3, "Lenth of w should be = 3"
-    assert phase == "val" or phase == "test" or phase == "train", "ERROR: Fitness computed on test or validation splits"
+    assert phase == "val" or phase == "test" or phase == "train", "ERROR: Fitness computed on test, val or train splits"
 
     fit = [0] * len(P_r)
 
     for i_ind, i in enumerate(P_r):
-
         if phase == 'val':
             absolute_acc = i.val['system'].accuracy
             absolute_time = i.val['system'].time
@@ -144,3 +152,30 @@ def f2_time_param_penalization(P_r, w, limits, phase="val"):
 
     return fit
 
+
+def f1_3objective_acc_time_param(P_r, w, limits, phase="val"):
+
+    assert phase == "val" or phase == "test" or phase == "train", "ERROR: Fitness computed on test, val or train splits"
+
+    fitness = []
+    for i_ind, i in enumerate(P_r):
+        if phase == 'val':
+            absolute_acc = i.val['system'].accuracy
+            absolute_time = i.val['system'].time
+            absolute_params = i.val['system'].params
+        elif phase == 'test':
+            absolute_acc = i.test['system'].accuracy
+            absolute_time = i.test['system'].time
+            absolute_params = i.test['system'].params
+        else:
+            absolute_acc = i.train['system'].accuracy
+            absolute_time = i.train['system'].time
+            absolute_params = i.train['system'].params
+
+        relative_acc = (absolute_acc - limits['min_accuracy'])/(limits['max_accuracy'] - limits['min_accuracy'])
+        relative_inference_time = (absolute_time - limits['max_time'])/(limits['min_time'] - limits['max_time'])
+        relative_model_params = (absolute_params - limits['max_params'])/(limits['min_params'] - limits['max_params'])
+
+        fitness.append((w[0] * relative_acc, w[1] * relative_inference_time, w[2] * relative_model_params))
+
+    return fitness
