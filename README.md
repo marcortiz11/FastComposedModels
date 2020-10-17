@@ -13,14 +13,21 @@ Due to the large number of ensembles that can result from the combination of the
 on the actual model, which is costly in DNN. 
 
 Finally, this **repository also contains a genetic algorithm we call EARN**. EARN is built on top of the FCM framework 
-so that (guided by a fitting function),  reduces the number of ensemble combinations to perform while still finding 
+so that (guided by a multi-objective cost function),  reduces the number of ensemble combinations to perform while still finding 
 close-to-optimal ensembles.
 
 The following sections provide explanations and examples on how to build an ensemble with FCM, how to evaluate it and 
-how to load ML classifiers.
+how to load the ML classifiers.
 
 
-## The components of an Ensemble
+## Design of ensemble methods
+An ensemble of ML models is represented as a Direct Acyclic Graph (DAG). The protobuf specification located at *source/FastComposedModels.proto*, describes the available nodes/components of the ensemble/graph along with its members and properties.
+The class of the ensemble is found in *source/system_builder*. The python class provides an easy interface for manipulating the protobuf definition of the graph.  
+The code that evaluates the DAG and therefore, the ensemble performance on an evaluation set 
+can be found in *source/system_evaluator*.
+
+
+## The Components of an Ensemble
 
 #### The Classifier
 A basic component of the ensemble is a classifier. Any kind of ML model that given an input maps it to a label.
@@ -60,34 +67,20 @@ An example of trigger definition can be seen in *Definitions/Triggers/probabilit
 *Tests/test_train_trigger_automatically.py* provides an example of how a trigger is defined in the 
 framework, how is added to the graph, how is trained automatically and how to interpret the results 
 
+#### The Merger
 
-
-## Design of ensemble methods
-The ensemble of NNs in the framework translates into the definition, building and evaluation of a DAG; 
-The definition of the graph with its available components/nodes and constraints
-are specified in a .proto definition found in *source/FastComposedModels.proto*. 
-The code that builds the DAG can be found in *source/system_builder*.  
-The code that builds the components of the graph is located in *source/make_util*.
-The code that evaluates the DAG and therefore, the ensemble performance on an evaluation set 
-can be found in *source/system_evaluator*.
-  
-#### Components of the Ensemble
-The available components of the graph are:
-*  **Classifier**: Classifier nodes receive a set of input ids. Input ids reference inputs on the evaluation set.
-The node then returns the predictions (logits, label) for the inputs. Nodes point Classifiers to predict a subset of the test/evaluation set. 
-*  **Merger**: Takes the prediction of multiple classifier nodes and regarding the merging protocol, 
+Takes the prediction of multiple classifier nodes and regarding the merging protocol, 
 provides a single output. Merging techniques available:
     * AVERAGE: Average the logits of the set of networks
     * VOTING: Max voting on the predicted labels of the networks
     * MAX: Select the class that has the maximum global value in the logits
-*  **Trigger**: Selects the appropriate network/s that will perform prediction for the current input. 
-If trigger is not trained, the evaluation
-part of the framework will train the trigger according to the trigger definition.
-*  **Data**: Provides meta-information on the dataset the ensemble method is trying to solve. 
+    
+#### The Data
 
-##### Bagging 3 classifiers
+Provides meta-information on the dataset the ensemble method is trying to solve. 
+    
 
-## Evaluation 
+## Evaluation of an Ensemble
 Code for evaluation located in *Source/system_evaluator.py*.
 Function evaluate() in the code evaluates the ensemble of NN by receiving as input parameters the graph
 describing the ensemble, the set of inputs (ids) to evaluate, and the starting node of the DAG
@@ -120,10 +113,6 @@ in the ensemble for the **subset** of the input predicted by them.
 ****Please look at Source/system_evaluator.py for more details**
 
 
-## Simple examples for using the framework
-In *SimpleSamples/** you can find simple examples
-
-
 ## Experiments performed on the framework and results
 In the folder Example of the project, there can be found several experiments with results saved as plots
 of each of them. Each experiment should containing a Readme explaining how to interpret the results already computed, 
@@ -136,13 +125,5 @@ Framework written in **Python3**
 To work with this project, **define**:  
 1. export PYTHONPATH=$PYTHONPATH:absolute/path/to/FastComposedModels 
 2. export FCM=absolute/path/to/FastComposedModels
-
-Additionally, work with this framework in the **CLUSTER**:  
-
-Consider creating symlinks instead of saving the classifier definitions.
-A python script copy_models.py in the folder *Definitions* of the framework, already
-is able to recursively create symlinks to classifiers definitions saved either in 
-dataP or dataT (preferred).
- 
 
 
