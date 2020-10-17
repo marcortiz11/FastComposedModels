@@ -20,12 +20,53 @@ class SystemBuilder:
 	def __serialize(self, system):
 		self.system_serialized = system.SerializeToString()
 
-	def __init__(self, verbose=True, id=""):
+	def __generate_system_id_merger(self, component, depth=1):
+		id = "Merge: "
+		merged = component.merged_ids
+		for c_id in merged:
+			c = self.get(c_id)
+			id += "\n|" + "\t" * depth
+			if c.DESCRIPTOR.name == "Merger":
+				id += self.__generate_system_id_merger(c, depth + 1)
+			else:
+				id += self.__generate_system_id_chain(c)
+		return id
+
+	def __generate_system_id_chain(self, c):
+		id = ""
+		component = c
+		while component is not None:
+			if component.DESCRIPTOR.name == "Trigger":
+				next_chain = component.component_ids
+				assert len(next_chain) < 3, "ERROR: gen_system_id_chain only works with chains"
+				id += "__%s__" % component.id
+				component = self.get(next_chain[0])
+			else:  # Classifier
+				next = component.component_id
+				if next != '':
+					component = self.get(next)
+				else:
+					id += "%s" % component.id
+					component = None
+		return id
+
+	def __str__(self):
+		component = self.get(self.get_start())
+		id = ""
+		if component.DESCRIPTOR.name == "Merger":
+			id += self.__generate_system_id_merger(component)
+		else:
+			id += self.__generate_system_id_chain(component)
+		return id
+
+	def __hash__(self):
+		return hash(str(self))
+
+	def __init__(self, verbose=True):
 		self.system_serialized = fcm.System().SerializeToString()
 		self.verbose = verbose
 		self.metrics = {}
 		self.start = ""  # Indicates the beginning of the graph/ensemble
-		self.id = id
 
 	def add_data(self, data):
 		self.__check_existence(data)
@@ -121,10 +162,6 @@ class SystemBuilder:
 	def set_start(self, id):
 		self.start = id
 
-	# Sets system id
-	def set_sysid(self, id):
-		self.id = id
-
 	# Returns the component in protobuf message
 	def get(self, id):
 		system = self.__deserialize()
@@ -144,7 +181,6 @@ class SystemBuilder:
 		system = self.__deserialize()
 		return system
 
-	# Get system's id
+	# Get system id
 	def get_sysid(self):
-		return self.id
-
+		return hash(self)
