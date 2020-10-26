@@ -18,25 +18,25 @@ def argument_parse(argv):
     parser.add_argument("--dataset", default="sota_models_cifar10-32-dev_validation", help="Datasets to evaluate d1 d2 d3, default=*")
     # Search-space params
     parser.add_argument("--population", default=1000, type=int, help="Population at each generation")
-    parser.add_argument("--offspring", default=500, type=int, help="Children generated at each generation")
+    parser.add_argument("--offspring", default=50, type=int, help="Children generated at each generation")
     parser.add_argument("--iterations", default=40, type=int, help="Number of iterations before finishing algorithm")
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
-    parser.add_argument("--pm", default=0.9, type=float, help="Probability of mutation")
-    parser.add_argument("--pc", default=0.1, type=float, help="Probability of crossing/breeding")
+    parser.add_argument("--pm", default=1, type=float, help="Probability of mutation")
+    parser.add_argument("--pc", default=0, type=float, help="Probability of crossing/breeding")
     parser.add_argument("--selection", default="nfit", type=str, help="Most fit selection (mfit) or roulette (roulette)")
     parser.add_argument("--a", nargs='+', default=[5/7, 1/7, 1/7], type=float, help="Fitting function's weight")
-    parser.add_argument("--k", default=50, type=int, help="Tournament size")
+    parser.add_argument("--k", default=10, type=int, help="Tournament size")
     # Execution parameters
     parser.add_argument("--plot", default=0, type=int, help="Plot the ensembles generated every generation")
     parser.add_argument("--cores", default=0, type=int, help="Parallel evaluation of the ensembles")
     parser.add_argument("--device", default="none", type=str, help="Device where to execute the ensembles (cpu, gpu or none)")
     parser.add_argument("--comment", default="", type=str, help="")
-    parser.add_argument("--experiment", default="bagging_boosting_of_chains_GA_1")
+    parser.add_argument("--experiment", default="main.py")
 
     return parser.parse_args(argv)
 
 
-def __get_classifier_name(c_file):
+def get_classifier_name(c_file):
     return io.read_pickle(c_file)['name']
 
 
@@ -46,11 +46,11 @@ def generate_initial_population():
     classifier_files = [os.path.join(classifier_path, f) for f in os.listdir(classifier_path) if ".pkl" in f]
     for c_file in classifier_files:
         sys = sb.SystemBuilder(verbose=False)
-        c_id = __get_classifier_name(c_file)
+        c_id = get_classifier_name(c_file)
         classifier = make.make_classifier(c_id, c_file)
         sys.add_classifier(classifier)
         sys.set_start(c_id)
-        sys.set_sysid(utils.generate_system_id(sys))
+        # sys.set_sysid(utils.generate_system_id(sys))
         P.append(sys)
     return P
 
@@ -68,7 +68,7 @@ def mutation_operation(P):
 
         # Pick a random classifier from the pool of solutions
         c_file_new = utils.pick_random_classifier(args)
-        c_id_new = __get_classifier_name(c_file_new)
+        c_id_new = get_classifier_name(c_file_new)
 
         # Find the tail of any chain to extend
         merger = None if 'Merger' not in new_p.get_start() else new_p.get_message().merger[0]
@@ -79,7 +79,7 @@ def mutation_operation(P):
 
         # Perform the operation
         om.extend_merged_chain(new_p, c_id_extend, c_id_new, th=utils.pick_random_threshold(args), c_file_new=c_file_new)
-        new_p.set_sysid(utils.generate_system_id(new_p))
+        #new_p.set_sysid(utils.generate_system_id(new_p))
         offspring.append(new_p)
 
     # Replace a classifier
@@ -87,9 +87,9 @@ def mutation_operation(P):
         new_p = p.copy()
         c_id_existing = utils.pick_random_classifier(args, new_p)
         c_file_new = utils.pick_random_classifier(args)
-        c_id_new = (c_id_existing[0] + '_' if c_id_existing[0] > '0' and c_id_existing[0] <= '9' else '') +__get_classifier_name(c_file_new)
+        c_id_new = (c_id_existing[0] + '_' if c_id_existing[0] > '0' and c_id_existing[0] <= '9' else '') + get_classifier_name(c_file_new)
         om.replace_classifier_merger(new_p, c_id_existing, c_id_new, c_file=c_file_new)
-        new_p.set_sysid(utils.generate_system_id(new_p))
+        #new_p.set_sysid(utils.generate_system_id(new_p))
         offspring.append(new_p)
 
     # Update threshold
@@ -97,7 +97,7 @@ def mutation_operation(P):
         new_p = p.copy()
         sign = 2*(random.random() > 0.5) - 1
         om.update_threshold(new_p, utils.pick_random_classifier(args, new_p), sign*args.step_th)
-        new_p.set_sysid(utils.generate_system_id(new_p))
+        #new_p.set_sysid(utils.generate_system_id(new_p))
         offspring.append(new_p)
 
     # Add classifier to be merged (Assuming 1 merger)
@@ -110,11 +110,11 @@ def mutation_operation(P):
             new_p = p.copy()
 
             c_file_new = utils.pick_random_classifier(args)
-            c_id_new = __get_classifier_name(c_file_new)
+            c_id_new = get_classifier_name(c_file_new)
             c_id_new = str(merger_number_chains) + "_" + c_id_new
 
             om.add_classifier_to_merger(new_p, merger_id, c_id_new, c_file_new)
-            new_p.set_sysid(utils.generate_system_id(new_p))
+            #new_p.set_sysid(utils.generate_system_id(new_p))
             offspring.append(new_p)
 
     return offspring
@@ -142,7 +142,7 @@ def crossover_operation(P, fit_vals):
 
         # Crossover operation: Merge chains or single classifiers
         o = ob.merge_two_chains(a, b)
-        o.set_sysid(utils.generate_system_id(o))
+        #o.set_sysid(utils.generate_system_id(o))
         offspring.append(o)
 
     return offspring
@@ -181,8 +181,10 @@ def crossover_operation_v2(P, fit_vals):
     pointB = classifiersB[random.randint(0, len(classifiersB) - 1)].id
     offspring += ob.singlepoint_crossover(a, b, pointA, pointB)
 
+    """
     for o in offspring:
         o.set_sysid(utils.generate_system_id(o))
+    """
 
     return offspring
 
@@ -218,7 +220,6 @@ def evaluate_population(P, phases=['test', 'val']):
     R = [ev.Results]*len(P)
 
     if args.cores:
-
         assert args.device != 'cpu', "ERROR: Code does not evaluate the chain ensemble on PyTorch w\ CPU"
 
         from multiprocessing import Process, Manager
@@ -292,12 +293,14 @@ if __name__ == "__main__":
 
     # Start the loop over generations
     iteration = 0
-    p_update = args.pm/args.iterations
+    p_update = args.pm/(args.iterations+10)
     while iteration < args.iterations:
 
+        """
         # Dynamic decreasing high mutation ratio (DHM)
         args.pm -= p_update
         args.pc += p_update
+        """
 
         start = time.time()
 
