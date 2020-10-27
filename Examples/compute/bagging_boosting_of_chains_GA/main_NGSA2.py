@@ -105,7 +105,7 @@ def dominates(r1, r2):
 
 
 def fast_non_dominated_sort(R):
-    rank = [-1]*len(R)  # Rank of the solution
+    rank = -np.ones(len(R), dtype=np.int)  # Rank of the solution
     N = [-1] * len(R)  # Dominant solutions
     S = []  # Dominated solutions
     F = set()  # Current front
@@ -170,7 +170,7 @@ if __name__ == "__main__":
         start = time.time()
 
         # Generate offspring and evaluate
-        P_offspring = generate_offspring(P, rank)
+        P_offspring = generate_offspring(P, -rank)
         R_offspring = evaluate_population(P_offspring)
 
         # Selection
@@ -181,7 +181,7 @@ if __name__ == "__main__":
         selected = np.argsort(rank_generation)[:main.args.population]
         P = [P_generation[i] for i in selected]
         R = [R_generation[i] for i in selected]
-        rank = [rank_generation[i] for i in selected]
+        rank = rank_generation[selected]  # Numpy array
 
         # Plotting population
         R_dict_old.update(R_dict)
