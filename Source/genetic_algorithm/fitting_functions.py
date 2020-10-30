@@ -1,3 +1,4 @@
+import numpy as np
 
 class Transform:
 
@@ -178,4 +179,4 @@ def f1_3objective_acc_time_param(P_r, w, limits, phase="val"):
 
         fitness.append((w[0] * relative_acc, w[1] * relative_inference_time, w[2] * relative_model_params))
 
-    return fitness
+    return np.array(fitness)

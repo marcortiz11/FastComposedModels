@@ -33,6 +33,19 @@ class Results(object):
     __slots__ = ('train', 'test', 'val')
 
 
+def get_dummy_result():
+    from random import random
+    r = Results()
+    r.test = Metrics()
+    r.val = Metrics()
+    r.train = Metrics()
+    r.test.time = r.val.time = random()
+    r.test.params = r.val.params = random()*1e6
+    r.test.accuracy = random()
+    r.val.accuracy = random()
+    return r
+
+
 def update_metrics_classifier(m, c_dict, predictions, gt, n_inputs):
     correct = m.instances*m.accuracy
     m.instances += n_inputs
