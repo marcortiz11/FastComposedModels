@@ -1,7 +1,7 @@
 import Examples.compute.bagging_boosting_of_chains_GA.main as main
 import Examples.metadata_manager_results as manager_results
 import Source.genetic_algorithm.selection as selection
-from Source.genetic_algorithm.fitting_functions import f1_time_param_penalization as fit
+import Source.genetic_algorithm.fitting_functions as fit_fun
 import Source.io_util as io
 from mpi4py import MPI
 import sys, random, os, time
@@ -31,13 +31,17 @@ def multinode_earn(comm):
     r = comm.Get_rank()
     s = comm.Get_size()
 
-    P = P_fit = R_dict = None
+    P = P_fit = R_dict = limit =None
     individuals_fitness_per_generation = []
 
     if r == 0:
         P = main.generate_initial_population()
         R = main.evaluate_population(P, phases=["val", "test"])
-        P_fit = fit(R, main.args.a)
+        R_dict = dict(zip([p.get_sysid() for p in P], R))
+        limit = fit_fun.make_limits_dict()
+        fit_fun.update_limit_dict(limit, R_dict, phase="val")
+        print(str(limit))
+        P_fit = fit_fun.f2_time_param_penalization(R, main.args.a, limit, phase="val")
         R_dict = {}  # Evaluation results
 
         for i, p in enumerate(P):
@@ -48,7 +52,7 @@ def multinode_earn(comm):
         # 1) Send population and fitness to all nodes
         if r == 0:
             start = time.time()
-            manager_data = {'individuals': P, 'fitness': P_fit, 'O': main.args.offspring // s}
+            manager_data = {'individuals': P, 'fitness': P_fit, 'O': main.args.offspring // s, 'limits': limit}
         else:
             manager_data = None
         manager_data = comm.bcast(manager_data, root=0)
@@ -57,13 +61,13 @@ def multinode_earn(comm):
         P = manager_data['individuals']
         P_fit = manager_data['fitness']
         O = manager_data['O']
+        limit = manager_data['limits']
 
         # 3) Every Node: Generate and evaluate offspring and fitness
         P_offspring_worker = main.generate_offspring(P, P_fit, O)
         R_offspring_worker = main.evaluate_population(P_offspring_worker, phases=["val", "test"])
-        # fit_offspring_worker = fit_fun.f1_time_param_penalization(R_offspring_worker, main.args.a)
-        # worker_data = {'offspring': P_offspring_worker, 'fitness': fit_offspring_worker, 'R': R_offspring_worker}
-        worker_data = {'offspring': P_offspring_worker, 'R': R_offspring_worker}
+        fit_offspring_worker = fit_fun.f2_time_param_penalization(R_offspring_worker, main.args.a, limit, phase="val")
+        worker_data = {'offspring': P_offspring_worker, 'fitness': fit_offspring_worker, 'R': R_offspring_worker}
 
         # 4) Send work back to manager node (rank=0)
         workers_data = comm.gather(worker_data, root=0)
@@ -72,15 +76,15 @@ def multinode_earn(comm):
         if r == 0:
             P_offspring = []
             R_offspring = []
-            # fit_offspring = []
+            fit_offspring = []
             for work in workers_data:
                 P_offspring = P_offspring + work['offspring']
                 R_offspring = R_offspring + work['R']
-                # fit_offspring = fit_offspring + work['fitness']
+                fit_offspring = fit_offspring + work['fitness']
 
             P_generation = P + P_offspring
             R_generation = R + R_offspring
-            fit_generation = fit(R_generation, main.args.a)
+            fit_generation = P_fit + fit_offspring
 
             if main.args.selection == "nfit":
                 best = selection.most_fit_selection(fit_generation, main.args.population)

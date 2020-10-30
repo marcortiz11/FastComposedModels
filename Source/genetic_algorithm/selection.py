@@ -76,20 +76,28 @@ def linear_rank_selection(fit_vals, n_survivors):
         return list(range(len(fit_vals)))
 
 
-def tournament_selection(fit_vals, K, p=0.8):
+def tournament_selection(fit_vals:np.ndarray, K: int, *fit_vals_next: np.ndarray, p=0.8) -> int:
+
     """
-    :param fit_vals: Fitness values of individuals
+    :param fit_vals: Fitness values of individuals.s
     :param K: Number of individuals to participate in the tournment
+    :param fit_vals_next: Secondary metrics for deciding best individuals in case of ties
     param: p: Probability of selecting winner
     :return: Index of the winner of the tournment
     """
+
     prob_distribution_selection = np.array([p * pow((1 - p), position) for position in range(K)])
     prob_distribution_selection /= sum(prob_distribution_selection)
-
     tournament_individuals = np.random.choice(len(fit_vals), K, replace=False)
-    fitness_individuals = np.array([fit_vals[i] for i in tournament_individuals])
 
-    result_tournment = np.argsort(-1 * fitness_individuals)
+    if len(fit_vals_next):
+        fitness_individuals = np.row_stack((fit_vals, np.array(fit_vals_next)))
+        fitness_individuals_tournment = (fitness_individuals[:, tournament_individuals])[::-1]
+        result_tournment = np.lexsort(-1 * fitness_individuals_tournment)
+    else:
+        fitness_individuals_tournment = np.array(fit_vals)[tournament_individuals]
+        result_tournment = np.argsort(-1 * fitness_individuals_tournment)
+
     position = np.random.choice(result_tournment, 1, p=prob_distribution_selection)
     winner = tournament_individuals[position[0]]
 
@@ -129,13 +137,7 @@ def dominator_selection(fit_vals):
 
 
 if __name__ == "__main__":
-    F = [(0.0, 1.0, 0),
-         (0.1, 0.9, 0),
-         (0.2, 0.8, 1),
-         (0.3, 0.7, 0),
-         (0.3, 0.6, 0),
-         (0.4, 0.8, 0),
-         (1.0, 0.6, 0),
-         ]
-    D = dominator_selection(F)
-    print(D)
+    # Testing tournment selection with multiple fitness values
+    f1 = np.ones(10)
+    f2 = np.arange(1, 0, -1/10)
+    w = tournament_selection(f1, 3, f2)
