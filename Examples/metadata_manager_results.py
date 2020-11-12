@@ -218,7 +218,10 @@ def get_ids_by_fieldval(meta_file, field, val):
     with open(meta_file) as file:
         meta_dataset = json.load(file)
         for entry in meta_dataset:
-            if entry[field] == val:
+            if isinstance(entry[field], dict):
+                if val.items() <= entry[field].items():
+                    query_result.append(entry['id'])
+            elif entry[field] == val:
                 query_result.append(entry['id'])
     return query_result
 

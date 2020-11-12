@@ -3,26 +3,35 @@ EARN following GP genetic operations format under NGSA2 elitism selection
 """
 
 from Examples.compute.bagging_boosting_of_chains_GA.main import *
-from Source.genetic_algorithm.fitting_functions import f1_3objective_acc_time_param as f
+from Source.genetic_algorithm.fitting_functions import normalize_error_time_params as f
+from Source.genetic_algorithm.selection import non_dominated_selection
+import Examples.compute.bagging_boosting_of_chains_GA.main as main
+import numpy as np
+from hvwfg import wfg
 del globals()["mutation_operation"]
 del globals()["generate_offspring"]
 del globals()["crossover_operation_v2"]
-import Examples.compute.bagging_boosting_of_chains_GA.main as main
-import numpy as np
 
 
-def mutation_operation(P: list) -> list:
+def mutation_operation(P: list, rank_dist:np.ndarray) -> list:
 
-    p = P[random.randint(0, len(P) - 1)]
+    # Tournament selection
+    rank = rank_dist[:, 0]
+    dist = rank_dist[:, 1]
+    K = min(rank.shape[0], main.args.k)
+    pi = selection.tournament_selection(rank, K, dist)
+    p = P[pi]
+
+    # Prepare new individual
     new_p = p.copy()
-    new_p_components = np.array(list(new_p.get_message().classifier) + list(new_p.get_message().merger))  # Nodes of the ensemble DAG
-    components_mutate = np.where(np.random.random(len(new_p_components)) < 1/len(new_p_components))[0]
+    new_p_components = np.array(list(new_p.get_message().classifier) + list(new_p.get_message().merger))
+    components_mutate = np.where(np.random.random(len(new_p_components)) < main.args.pm)[0]
 
     for component in new_p_components[components_mutate]:
 
         if component.DESCRIPTOR.name == "Merger":
             number_merged = len(component.merged_ids)
-            operation = random.randint(0, 1) if number_merged < 3 else 1  # Limit the merged chains
+            operation = random.randint(0, 1)
 
             # Merger mutation: Add one more classifier
             if operation == 0:
@@ -32,7 +41,9 @@ def mutation_operation(P: list) -> list:
                 om.add_classifier_to_merger(new_p, component.id, c_id_new, c_file_new)
 
             # Merger mutation: Change merging protocol
-            # TODO: Change merging protocol
+            elif operation == 1:
+                merge_protocol = 6 if component.merge_type == 2 else 2
+                om.change_merging_protocol(new_p, component.id, merge_protocol=merge_protocol)
 
         elif component.DESCRIPTOR.name == "Classifier":
             operation = random.randint(0, 2) if component.component_id == "" else random.randint(1, 2)
@@ -49,7 +60,7 @@ def mutation_operation(P: list) -> list:
                 c_id_new = (component.id[0] + '_' if '0' < component.id[0] <= '9' else '') + get_classifier_name(c_file_new)
                 om.replace_classifier_merger(new_p, component.id, c_id_new, c_file=c_file_new)
 
-            # Classifier mutation: Extend chain
+            # Classifier mutation: Update threshold
             if operation == 2:
                 new_p = p.copy()
                 sign = 2*(random.random() > 0.5) - 1
@@ -100,10 +111,10 @@ def generate_offspring(P:list, rank_dist: np.ndarray, o=None) -> list:
     offspring_dict = {}
     while len(offspring_dict) < o:
         r = random.random()
-        if main.args.pm > r:
-            for offspring in mutation_operation(P):
+        if main.args.rm > r:
+            for offspring in mutation_operation(P, rank_dist):
                 offspring_dict[offspring.get_sysid()] = offspring
-        if main.args.pc > r:
+        if (1-main.args.rm)/2 > r:
             for offspring in crossover_operation_v2(P, rank_dist):
                 offspring_dict[offspring.get_sysid()] = offspring
 
@@ -119,8 +130,8 @@ def argument_parse(argv):
     parser.add_argument("--offspring", default=100, type=int, help="Children generated at each generation")
     parser.add_argument("--iterations", default=50, type=int, help="Number of iterations before finishing algorithm")
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
-    parser.add_argument("--pm", default=0.8, type=float, help="Probability of mutation")
-    parser.add_argument("--pc", default=0.2, type=float, help="Probability of crossing/breeding")
+    parser.add_argument("--pm", default=0.2, type=float, help="Probability of mutation")
+    parser.add_argument("--rm", default=0.8, type=float, help="Rate of mutation")
     parser.add_argument("--k", default=10, type=int, help="Tournament size")
     parser.add_argument("--a", nargs='+', default=[1, 1, 1], type=float, help="Fitting function's weight")
     # Execution parameters
@@ -133,32 +144,34 @@ def argument_parse(argv):
     return parser.parse_args(argv)
 
 
-def get_rank_crowding_dist(R: list, limits: dict) -> np.ndarray:
-    rank = fast_non_dominated_sort(R)
+def get_rank_crowding_dist(R: list, limits: dict, w: list) -> np.ndarray:
+    obj = f(R, w, limits)
+    rank = fast_non_dominated_sort(obj)
     crowd_dist = np.zeros(rank.shape)
     for ri in np.unique(rank):
         positions = np.where(rank == ri)[0]
-        Ri = [R[i] for i in positions]
-        normalized_objectives = f(Ri, main.args.a, limits)
-        crowd_dist[positions] = compute_crowding_distance(normalized_objectives)
+        crowd_dist[positions] = compute_crowding_distance(obj[positions])
     return np.column_stack((rank, -crowd_dist))
 
 
-def fast_non_dominated_sort(R: list) -> np.ndarray:
+def fast_non_dominated_sort(obj: np.ndarray) -> np.ndarray:
 
-    dominates = lambda r1, r2: r1.val["system"].accuracy >= r2.val["system"].accuracy and\
-                               r1.val["system"].time <= r2.val["system"].time and \
-                               r1.val["system"].params <= r2.val["system"].params
+    dominates = lambda r1, r2: r1[0] <= r2[0] and \
+                               r1[1] <= r2[1] and \
+                               r1[2] <= r2[2] and \
+                               (r1[0] < r2[0] or
+                                r1[1] < r2[1] or
+                                r1[2] < r2[2])
 
-    rank = -np.ones(len(R), dtype=np.int)  # Rank of the solution
+    rank = -np.ones(obj.shape[0], dtype=np.int)  # Rank of the solution
     N = -np.ones(rank.shape)  # Dominant solutions
     S = []  # Dominated solutions
     F = set()  # Current front
 
-    for ri, r in enumerate(R):
+    for ri, r in enumerate(obj):
         Sr = []
         n = 0
-        for qi, q in enumerate(R):
+        for qi, q in enumerate(obj):
             if ri != qi:
                 if dominates(r, q):
                     Sr.append(qi)
@@ -189,15 +202,31 @@ def fast_non_dominated_sort(R: list) -> np.ndarray:
 def compute_crowding_distance(obj: np.ndarray) -> np.ndarray:
     D = np.zeros(obj.shape[0])
     for j in range(obj.shape[1]):
-        obj_id_sorted = np.argsort(obj[:, j])
-        D[obj_id_sorted[0]] = D[obj_id_sorted[-1]] = float("inf")
-        for i in range(1, obj.shape[0] - 1):
-            D[obj_id_sorted[i]] += obj[obj_id_sorted[i+1], j] - obj[obj_id_sorted[i-1], j]
+        if main.args.a[j]:
+            obj_id_sorted = np.argsort(obj[:, j])
+            D[obj_id_sorted[0]] = D[obj_id_sorted[-1]] = float("inf")
+            for i in range(1, obj.shape[0] - 1):
+                D[obj_id_sorted[i]] += obj[obj_id_sorted[i+1], j] - obj[obj_id_sorted[i-1], j]
     return D
+
+
+def compute_hvolume(obj: np.ndarray) -> float:
+    ref = np.array([1.0, 1.0, 1.0])
+    obj = obj[non_dominated_selection(obj)]
+    valid = np.logical_and(obj[:, 0] <= ref[0], obj[:, 1] <= ref[1])
+    valid = np.logical_and(obj[:, 2] <= ref[2], valid)
+    obj = obj[np.where(valid)[0]]
+    hv = wfg(obj, ref)
+    return hv
 
 
 if __name__ == "__main__":
     main.args = argument_parse(sys.argv[1:])
+
+    if sum(main.args.a) < 3:
+        import warnings
+        warnings.warn("EARN termination criterion based on hyper-volume indicator "
+                      "not working when optimizing for < 3 objectives")
 
     # Create a temporal folder for the triggers models to be stored during the execution
     os.environ['TMP'] = 'Definitions/Classifiers/tmp/'+main.args.dataset[12:-15]
@@ -210,19 +239,22 @@ if __name__ == "__main__":
     R = evaluate_population(P)
     individuals_fitness_per_generation = []
 
-    # Evaluation Results Dictionary
-    R_dict = {}
-    R_dict_old = {}
-    R_dict_models = dict(zip([p.get_sysid() for p in P], R))
+    # Ensemble Evaluation Results Dictionary
+    R_dict = {}  # Ensemble evaluation results for the current iteration
+    R_dict_old = {}  # Ensemble evaluation results in all iterations
+    R_dict_models = dict(zip([p.get_sysid() for p in P], R))  # NN evaluation results
     R_dict_old.update(R_dict_models)
     limits = fit_fun.make_limits_dict()
     fit_fun.update_limit_dict(limits, R_dict_models, phase="val")
 
-    rank_dist = get_rank_crowding_dist(R, limits)  # Numpy array
+    rank_dist = get_rank_crowding_dist(R, limits, main.args.a)
 
-    # Start the loop over generations
+    # Run EARN until hypervolume indicator incrases with minimum generations of main.args.iterations
     iteration = 0
-    while iteration < main.args.iterations:
+    hvolume_previous = -1
+    hvolume_current = 0
+
+    while iteration < main.args.iterations or hvolume_current > hvolume_previous:
 
         start = time.time()
 
@@ -233,7 +265,7 @@ if __name__ == "__main__":
         # Selection
         P_generation = P + P_offspring
         R_generation = R + R_offspring
-        rank_dist_generation = get_rank_crowding_dist(R_generation, limits)
+        rank_dist_generation = get_rank_crowding_dist(R_generation, limits, main.args.a)
 
         selected = np.lexsort(rank_dist_generation.T[::-1])[:main.args.population]
         P = [P_generation[i] for i in selected]
@@ -243,20 +275,26 @@ if __name__ == "__main__":
         # Plotting population
         R_dict_old.update(R_dict)
         R_dict.clear()
+        ids = []
         for i, p in enumerate(P):
-            R_dict[p.get_sysid()] = R[i]
+            id = p.get_sysid()
+            R_dict[id] = R[i]
+            ids.append(id)
         if main.args.plot:
             utils.plot_population(R_dict, R_dict_models, iteration)
 
         # Save which individuals alive every iteration
-        ids = [p.get_sysid() for p in P]
         individuals_fitness_per_generation += [(ids, rank_dist)]
+
+        iteration += 1
+        obj = f(R, main.args.a, limits, phase="val")
+        hvolume_previous = hvolume_current
+        hvolume_current = compute_hvolume(obj)
 
         # Info about current generation
         print("Generation %d" % iteration)
+        print("HyperVolume %f" % hvolume_current)
         print("TIME: Seconds per generation: %f " % (time.time()-start))
-
-        iteration += 1
 
     # Save the results
     import Examples.metadata_manager_results as manager_results
