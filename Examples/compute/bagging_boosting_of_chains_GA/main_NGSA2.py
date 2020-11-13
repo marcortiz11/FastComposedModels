@@ -3,11 +3,10 @@ EARN following GP genetic operations format under NGSA2 elitism selection
 """
 
 from Examples.compute.bagging_boosting_of_chains_GA.main import *
-from Source.genetic_algorithm.fitting_functions import normalize_error_time_params as f
-from Source.genetic_algorithm.selection import non_dominated_selection
+from Source.genetic_algorithm.fitting_functions import normalize_error_time_params as f_norm
+from Source.genetic_algorithm.moo import fast_non_dominated_sort, compute_crowding_distance, hvolume
 import Examples.compute.bagging_boosting_of_chains_GA.main as main
 import numpy as np
-from hvwfg import wfg
 del globals()["mutation_operation"]
 del globals()["generate_offspring"]
 del globals()["crossover_operation_v2"]
@@ -144,8 +143,7 @@ def argument_parse(argv):
     return parser.parse_args(argv)
 
 
-def get_rank_crowding_dist(R: list, limits: dict, w: list) -> np.ndarray:
-    obj = f(R, w, limits)
+def get_rank_crowding_dist(obj: np.ndarray) -> np.ndarray:
     rank = fast_non_dominated_sort(obj)
     crowd_dist = np.zeros(rank.shape)
     for ri in np.unique(rank):
@@ -154,79 +152,8 @@ def get_rank_crowding_dist(R: list, limits: dict, w: list) -> np.ndarray:
     return np.column_stack((rank, -crowd_dist))
 
 
-def fast_non_dominated_sort(obj: np.ndarray) -> np.ndarray:
-
-    dominates = lambda r1, r2: r1[0] <= r2[0] and \
-                               r1[1] <= r2[1] and \
-                               r1[2] <= r2[2] and \
-                               (r1[0] < r2[0] or
-                                r1[1] < r2[1] or
-                                r1[2] < r2[2])
-
-    rank = -np.ones(obj.shape[0], dtype=np.int)  # Rank of the solution
-    N = -np.ones(rank.shape)  # Dominant solutions
-    S = []  # Dominated solutions
-    F = set()  # Current front
-
-    for ri, r in enumerate(obj):
-        Sr = []
-        n = 0
-        for qi, q in enumerate(obj):
-            if ri != qi:
-                if dominates(r, q):
-                    Sr.append(qi)
-                elif dominates(q, r):
-                    n += 1
-        S.append(Sr)
-        N[ri] = n
-
-        if n == 0:
-            rank[ri] = 1
-            F.add(ri)
-
-    i = 1
-    while len(F) > 0:
-        Q = set()
-        for ri in F:
-            for qi in S[ri]:
-                N[qi] -= 1
-                if N[qi] == 0:
-                    rank[qi] = i+1
-                    Q.add(qi)
-        i += 1
-        F = Q
-
-    return rank
-
-
-def compute_crowding_distance(obj: np.ndarray) -> np.ndarray:
-    D = np.zeros(obj.shape[0])
-    for j in range(obj.shape[1]):
-        if main.args.a[j]:
-            obj_id_sorted = np.argsort(obj[:, j])
-            D[obj_id_sorted[0]] = D[obj_id_sorted[-1]] = float("inf")
-            for i in range(1, obj.shape[0] - 1):
-                D[obj_id_sorted[i]] += obj[obj_id_sorted[i+1], j] - obj[obj_id_sorted[i-1], j]
-    return D
-
-
-def compute_hvolume(obj: np.ndarray) -> float:
-    ref = np.array([1.0, 1.0, 1.0])
-    obj = obj[non_dominated_selection(obj)]
-    valid = np.logical_and(obj[:, 0] <= ref[0], obj[:, 1] <= ref[1])
-    valid = np.logical_and(obj[:, 2] <= ref[2], valid)
-    obj = obj[np.where(valid)[0]]
-    hv = wfg(obj, ref)
-    return hv
-
-
 if __name__ == "__main__":
     main.args = argument_parse(sys.argv[1:])
-
-    if sum(main.args.a) < 3:
-        import warnings
-        warnings.warn("EARN termination criterion based on hyper-volume indicator "
-                      "not working when optimizing for < 3 objectives")
 
     # Create a temporal folder for the triggers models to be stored during the execution
     os.environ['TMP'] = 'Definitions/Classifiers/tmp/'+main.args.dataset[12:-15]
@@ -238,6 +165,7 @@ if __name__ == "__main__":
     P = generate_initial_population()
     R = evaluate_population(P)
     individuals_fitness_per_generation = []
+    rank_dist = np.zeros((len(P), 2))
 
     # Ensemble Evaluation Results Dictionary
     R_dict = {}  # Ensemble evaluation results for the current iteration
@@ -247,9 +175,7 @@ if __name__ == "__main__":
     limits = fit_fun.make_limits_dict()
     fit_fun.update_limit_dict(limits, R_dict_models, phase="val")
 
-    rank_dist = get_rank_crowding_dist(R, limits, main.args.a)
-
-    # Run EARN until hypervolume indicator incrases with minimum generations of main.args.iterations
+    # Run EARN while hypervolume indicator of the front incrases
     iteration = 0
     hvolume_previous = -1
     hvolume_current = 0
@@ -265,9 +191,12 @@ if __name__ == "__main__":
         # Selection
         P_generation = P + P_offspring
         R_generation = R + R_offspring
-        rank_dist_generation = get_rank_crowding_dist(R_generation, limits, main.args.a)
 
+        obj = f_norm(R_generation, limits, phase="val")
+        obj = obj[:, main.args.a == 1]
+        rank_dist_generation = get_rank_crowding_dist(obj)
         selected = np.lexsort(rank_dist_generation.T[::-1])[:main.args.population]
+
         P = [P_generation[i] for i in selected]
         R = [R_generation[i] for i in selected]
         rank_dist = rank_dist_generation[selected]
@@ -287,9 +216,8 @@ if __name__ == "__main__":
         individuals_fitness_per_generation += [(ids, rank_dist)]
 
         iteration += 1
-        obj = f(R, main.args.a, limits, phase="val")
         hvolume_previous = hvolume_current
-        hvolume_current = compute_hvolume(obj)
+        hvolume_current = hvolume(obj)
 
         # Info about current generation
         print("Generation %d" % iteration)

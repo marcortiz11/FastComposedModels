@@ -1,5 +1,6 @@
 import numpy as np
 
+"""
 class Transform:
 
     def set_max_features(self, max):
@@ -26,7 +27,7 @@ class Transform:
             assert self.min < f < self.max, "Features in different order"
             min_max_normalized.append((f - self.min[fi]) / (self.max[fi] - self.min[fi]))
         return min_max_normalized
-
+"""
 
 def make_limits_dict():
 
@@ -154,29 +155,29 @@ def f2_time_param_penalization(P_r, w, limits, phase="val"):
     return fit
 
 
-def f1_3objective_acc_time_param(P_r, w, limits, phase="val"):
+def normalize_error_time_params(P_r: list, limits: dict, phase="val") -> np.ndarray:
 
     assert phase == "val" or phase == "test" or phase == "train", "ERROR: Fitness computed on test, val or train splits"
 
-    fitness = []
-    for i_ind, i in enumerate(P_r):
-        if phase == 'val':
-            absolute_acc = i.val['system'].accuracy
-            absolute_time = i.val['system'].time
-            absolute_params = i.val['system'].params
-        elif phase == 'test':
-            absolute_acc = i.test['system'].accuracy
-            absolute_time = i.test['system'].time
-            absolute_params = i.test['system'].params
-        else:
-            absolute_acc = i.train['system'].accuracy
-            absolute_time = i.train['system'].time
-            absolute_params = i.train['system'].params
+    if phase == 'val':
+        absolute_err = [1 - i.val['system'].accuracy for i in P_r]
+        absolute_time = [i.val['system'].time for i in P_r]
+        absolute_params = [i.val['system'].params for i in P_r]
+    elif phase == 'test':
+        absolute_err = [1 - i.test['system'].accuracy for i in P_r]
+        absolute_time = [i.test['system'].time for i in P_r]
+        absolute_params = [i.test['system'].params for i in P_r]
+    else:
+        absolute_err = [1 - i.train['system'].accuracy for i in P_r]
+        absolute_time = [i.train['system'].time for i in P_r]
+        absolute_params = [i.train['system'].params for i in P_r]
 
-        relative_acc = (absolute_acc - limits['min_accuracy'])/(limits['max_accuracy'] - limits['min_accuracy'])
-        relative_inference_time = (absolute_time - limits['max_time'])/(limits['min_time'] - limits['max_time'])
-        relative_model_params = (absolute_params - limits['max_params'])/(limits['min_params'] - limits['max_params'])
+    relative_err = np.array([(abs_err - (1-limits['max_accuracy']))/
+                            (1-limits['min_accuracy'] - (1-limits['max_accuracy'])) for abs_err in absolute_err])
+    relative_time = np.array([(abs_time - limits['min_time'])/
+                            (limits['max_time'] - limits['min_time']) for abs_time in absolute_time])
+    relative_params = np.array([(abs_params - limits['min_params'])/
+                                (limits['max_params'] - limits['min_params']) for abs_params in absolute_params])
 
-        fitness.append((w[0] * relative_acc, w[1] * relative_inference_time, w[2] * relative_model_params))
-
-    return np.array(fitness)
+    fitness = np.array([relative_err, relative_time, relative_params]).T
+    return fitness

@@ -5,7 +5,9 @@ import Source.genetic_algorithm.fitting_functions as fit_fun
 import Source.genetic_algorithm.operations_breed as ob
 import Examples.compute.chain_genetic_algorithm.utils as utils
 import Source.system_evaluator as ev
+import numpy as np
 import argparse, sys, random, os, time
+
 
 def argument_parse(argv):
     parser = argparse.ArgumentParser(usage="main.py [options]",
@@ -14,16 +16,15 @@ def argument_parse(argv):
     # Search-space params
     parser.add_argument("--iterations", default=200, type=int, help="Number of iterations before finishing algorithm")
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
-    parser.add_argument("--pm", default=1, type=float, help="Probability of mutation")
-    parser.add_argument("--pc", default=0, type=float, help="Probability of crossing/breeding")
-    parser.add_argument("--a", nargs='+', default=[1, 1, 0], type=float, help="Fitting function's weight")
-    parser.add_argument("--offspring", default=50, type=int, help="Children generated at each generation")
+    parser.add_argument("--pm", default=0.8, type=float, help="Probability of mutation")
+    parser.add_argument("--a", nargs='+', default=[1, 1, 1], type=float, help="Fitting function's weight")
+    parser.add_argument("--offspring", default=100, type=int, help="Children generated at each generation")
     # Execution parameters
     parser.add_argument("--plot", default=0, type=int, help="Plot the ensembles generated every generation")
     parser.add_argument("--cores", default=0, type=int, help="Parallel evaluation of the ensembles")
     parser.add_argument("--device", default="none", type=str, help="Device where to execute the ensembles (cpu, gpu or none)")
     parser.add_argument("--comment", default="", type=str, help="")
-    parser.add_argument("--experiment", default="bagging_boosting_of_chains_GA-dominator_selection")
+    parser.add_argument("--experiment", default="main_EARNv2.py")
     return parser.parse_args(argv)
 
 
@@ -55,8 +56,10 @@ def crossover_operation_v2(P):
     pointB = classifiersB[random.randint(0, len(classifiersB) - 1)].id
     offspring += ob.singlepoint_crossover(a, b, pointA, pointB)
 
+    """
     for o in offspring:
         o.set_sysid(utils.generate_system_id(o))
+    """
 
     return offspring
 
@@ -73,7 +76,7 @@ def generate_offspring(P, fit_vals, o=None):
         if main.args.pm > r:
             for offspring in main.mutation_operation(P):
                 offspring_dict[offspring.get_sysid()] = offspring
-        if main.args.pc > r:
+        if (1 - main.args.pm)/2 > r:
             for offspring in crossover_operation_v2(P):
                 offspring_dict[offspring.get_sysid()] = offspring
 
@@ -160,33 +163,28 @@ if __name__ == "__main__":
     limits = fit_fun.make_limits_dict()
     fit_fun.update_limit_dict(limits, R_dict_models, phase="val")
 
-    fit = fit_fun.f1_3objective_acc_time_param(R, main.args.a, limits)
+    obj = fit_fun.normalize_error_time_params(R, main.args.a, limits)
 
     # Start the loop over generations
     iteration = 0
-    p_update = main.args.pm/main.args.iterations
     while iteration < main.args.iterations:
-
-        # Dynamic decreasing high mutation ratio (DHM)
-        main.args.pm -= p_update
-        main.args.pc += p_update
 
         start = time.time()
 
         # Generate offspring and evaluate
-        P_offspring = generate_offspring(P, fit)
+        P_offspring = generate_offspring(P, obj)
         R_offspring = evaluate_population(P_offspring)
-        fit_offspring = fit_fun.f1_3objective_acc_time_param(R_offspring, main.args.a, limits)
+        obj_offspring = fit_fun.normalize_error_time_params(R_offspring, main.args.a, limits)
 
         # Selection
-        fit_generation = fit + fit_offspring
         P_generation = P + P_offspring
         R_generation = R + R_offspring
-        selected = selection.dominator_selection(fit_generation)
+        obj_generation = np.vstack((obj, obj_offspring))
+        selected = selection.non_dominated_selection(obj_generation)
 
         # Population Generation i+1
         P = [P_generation[i] for i in selected]
-        fit = [fit_generation[i] for i in selected]
+        obj = [obj_generation[i] for i in selected]
         R = [R_generation[i] for i in selected]
 
         # Plotting population
@@ -200,7 +198,7 @@ if __name__ == "__main__":
 
         # Save which individuals alive every iteration
         ids = [p.get_sysid() for p in P]
-        individuals_fitness_per_generation += [(ids, fit)]
+        individuals_fitness_per_generation += [(ids, obj)]
 
         # Info about current generation
         print("Iteration %d" % iteration)

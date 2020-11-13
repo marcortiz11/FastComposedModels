@@ -104,38 +104,6 @@ def tournament_selection(fit_vals:np.ndarray, K: int, *fit_vals_next: np.ndarray
     return winner
 
 
-def dominator_selection(fit_vals):
-    """
-    Returns the dominator set of ensembles according to the values in fit_vals
-    :param fit_vals: 2-Dim list containing: Normalized accuracy [0..1],
-                     normalized prediction speed (1 - norm. inference time [0..1]),
-                     and normalized ensemble size (1 - norm. #params [0..1])
-                     for each ensemble evaluated
-    :return: The set of dominator solutions (Paretto Frontier)
-    """
-
-    assert len(fit_vals) > 0 and len(fit_vals[0]) == 3, \
-        "Fitting value should have 3 components"
-
-    dominators = set([])
-    dominates = lambda f1, f2:  f1[0] >= f2[0] and f1[1] >= f2[1] and f1[2] >= f2[2]
-
-    for i, f in enumerate(fit_vals):
-        dominated = False
-        for d in list(dominators):
-            fd = d[1]
-            if dominates(f, fd):
-                dominators.remove(d)
-            elif dominates(fd, f):
-                dominated = True
-                break
-        if not dominated:
-            elem = (i, f)
-            dominators.add(elem)
-
-    return [d[0] for d in dominators]
-
-
 if __name__ == "__main__":
     # Testing tournment selection with multiple fitness values
     f1 = np.ones(10)
