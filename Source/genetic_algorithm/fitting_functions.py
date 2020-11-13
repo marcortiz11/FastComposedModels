@@ -179,5 +179,5 @@ def normalize_error_time_params(P_r: list, limits: dict, phase="val") -> np.ndar
     relative_params = np.array([(abs_params - limits['min_params'])/
                                 (limits['max_params'] - limits['min_params']) for abs_params in absolute_params])
 
-    fitness = np.array([relative_err, relative_time, relative_params]).T
+    fitness = np.column_stack((relative_err, relative_time, relative_params))
     return fitness
