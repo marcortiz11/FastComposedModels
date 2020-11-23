@@ -15,6 +15,14 @@ def __time():
     return 0
 
 
+def softmax(L: np.ndarray) -> np.ndarray:
+    # Numerically stable softmax function
+    m = np.amax(L, axis=1)[:, None]
+    X = np.exp(L - m)
+    P = X / X.sum(axis=1)[:, None]
+    return P
+
+
 def __get_trigger_raw_data(data, phase):
 
     if phase == "test":
@@ -27,15 +35,14 @@ def __get_trigger_raw_data(data, phase):
     dataset = io.read_pickle(data_source)
 
     L = dataset['logits']
-    dividend = np.sum(np.exp(L), axis=1)
-    P = np.exp(L) / dividend[:, None]
+    P = softmax(L)
     th = dataset['th']
     gt = dataset['gt']
     ids = dataset['id']
 
     sort = np.sort(P, axis=1)
-    diff = sort[:, -1] - sort[:, -2]
-    y = np.transpose(np.append(np.array([diff < th]), np.array([diff >= th]), axis=0))
+    diff = np.array(sort[:, -1] - sort[:, -2])
+    y = np.column_stack((diff < th, diff >= th)).astype(np.int)
     raw_data = make.make_classifier_raw_data(y, gt == np.argmax(L, axis=1), ids)
     return raw_data
 
@@ -49,7 +56,7 @@ def train_fit(sys, id_trigger):
     # Test
     test = __get_trigger_raw_data(data, "test")
     # Train
-    train = None #__get_trigger_raw_data(data, "train")
+    train = __get_trigger_raw_data(data, "train")
     # Validation
     val = None
     if data.source.HasField('val_path'):
