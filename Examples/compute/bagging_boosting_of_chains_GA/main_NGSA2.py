@@ -4,12 +4,30 @@ EARN following GP genetic operations format under NGSA2 elitism selection
 
 from Examples.compute.bagging_boosting_of_chains_GA.main import *
 from Source.genetic_algorithm.fitting_functions import normalize_error_time_params as f_norm
-from Source.genetic_algorithm.moo import fast_non_dominated_sort, compute_crowding_distance, hvolume
+from Source.genetic_algorithm.moo import fast_non_dominated_sort, compute_crowding_distance, compute_hvolume
 import Examples.compute.bagging_boosting_of_chains_GA.main as main
+import Source.FastComposedModels_pb2 as fcm
 import numpy as np
 del globals()["mutation_operation"]
 del globals()["generate_offspring"]
 del globals()["crossover_operation_v2"]
+del globals()["generate_initial_population"]
+
+
+def generate_initial_population():
+    classifier_path = os.path.join(os.environ['FCM'], 'Definitions', 'Classifiers', main.args.dataset)
+    P = []
+    classifier_files = [os.path.join(classifier_path, f) for f in os.listdir(classifier_path) if ".pkl" in f]
+    for c_file in classifier_files:
+        sys = sb.SystemBuilder(verbose=False)
+        c_id = get_classifier_name(c_file)
+        classifier = make.make_classifier(c_id, c_file)
+        sys.add_classifier(classifier)
+        merger = make.make_merger('Merger', [c_id], merge_type=fcm.Merger.AVERAGE)
+        sys.add_merger(merger)
+        sys.set_start('Merger')
+        P.append(sys)
+    return P
 
 
 def mutation_operation(P: list, rank_dist:np.ndarray) -> list:
@@ -86,11 +104,6 @@ def crossover_operation_v2(P:list, rank_dist:np.ndarray) -> list:
 
     offspring = []
 
-    # If two parents are chains merge them
-    if len(a.get_message().merger) == 0 and len(b.get_message().merger) == 0:
-        o = ob.merge_two_chains(a, b)
-        offspring.append(o)
-
     # Single-Point Crossover of two Ensembles
     classifiersA = a.get_message().classifier
     classifiersB = b.get_message().classifier
@@ -162,7 +175,9 @@ if __name__ == "__main__":
     random.seed()
 
     # Initial population
+    print("Loading initial population")
     P = generate_initial_population()
+    print("Evaluating initial population")
     R = evaluate_population(P)
     individuals_fitness_per_generation = []
     rank_dist = np.zeros((len(P), 2))
@@ -186,14 +201,14 @@ if __name__ == "__main__":
 
         # Generate offspring and evaluate
         P_offspring = generate_offspring(P, rank_dist)
-        R_offspring = evaluate_population(P_offspring)
-
+        R_offspring = evaluate_population(P_offspring, phases=["test", "val"])
+        
         # Selection
         P_generation = P + P_offspring
         R_generation = R + R_offspring
 
         obj = f_norm(R_generation, limits, phase="val")
-        obj = obj[:, main.args.a == 1]
+        obj = obj[:, np.array(main.args.a) > 0]
         rank_dist_generation = get_rank_crowding_dist(obj)
         selected = np.lexsort(rank_dist_generation.T[::-1])[:main.args.population]
 
@@ -217,11 +232,11 @@ if __name__ == "__main__":
 
         iteration += 1
         hvolume_previous = hvolume_current
-        hvolume_current = hvolume(obj)
+        hvolume_current = compute_hvolume(obj)
 
         # Info about current generation
         print("Generation %d" % iteration)
-        print("HyperVolume %f" % hvolume_current)
+        print("Hyper-volume %f" % hvolume_current)
         print("TIME: Seconds per generation: %f " % (time.time()-start))
 
     # Save the results
