@@ -1,5 +1,5 @@
 import numpy as np
-import Source.system_builder as sb
+import Source.system_builder_serializable as sb
 import Source.make_util as make
 import Source.io_util as io
 import Source.system_evaluator as eval
@@ -55,7 +55,7 @@ def build_3_chain_skeleton(pid):
     return sys
 
 
-def evaluation_3_chain_core(pid, c0, th0, th1, c1, th2, c2, work_done):
+def evaluation_3_chain_core(pid, c0, th0, th1, c1, th2, c2):
     """
     Evaluation of a chain of 3 classifiers.
     :param pid: Pid of the process, chain identifier
@@ -94,7 +94,7 @@ def evaluation_3_chain_core(pid, c0, th0, th1, c1, th2, c2, work_done):
     # EVALUATION
     id = "%s_(%f,%f)_%s_(%f)_%s" % (c0.split('/')[-1], th0, th1, c1.split('/')[-1], th2, c2.split('/')[-1])
     result = eval.evaluate(sys, "c0")
-    work_done.put((id, result))
+    return result
 
 
 def argument_parse(argv):
@@ -105,8 +105,8 @@ def argument_parse(argv):
                                                  "combinations.")
     parser.add_argument("--datasets", nargs="*", default="*", help="Datasets to evaluate d1 d2 d3, default=*")
     parser.add_argument("--step_th", default=0.1, type=float, help="Threshold step, default=0.1")
-    parser.add_argument("--fc", default=0, type=int, help="All combinations with fully connected chain, default=fc")
-    parser.add_argument("--parallel", default=1, type=int, help="Number of nodes paralellism")
+    parser.add_argument("--fc", default=0, type=int, help="All combinations with fully connected chain")
+    parser.add_argument("--parallel", default=1, type=int, help="Number of cores paralellism")
     parser.add_argument("--comment", default="", type=str, help="Comments about the experiment")
     return parser.parse_args(argv)
 
@@ -161,13 +161,19 @@ if __name__ == "__main__":
 
         for ic0 in range(len(models)):
             c0 = models[ic0]
-            for th0 in np.arange(0, 1, step_th):
-                for ic1 in range(len(models)):
+            for th0 in np.arange(0.2, 1, step_th):
+                for ic1 in range(ic0+1, len(models)):
                     c1 = models[ic1]
-                    for th2 in np.arange(0, 1, step_th):
-                        for ic2 in range(len(models)):
+                    for th2 in np.arange(0.2, 1, step_th):
+                        for ic2 in range(ic1+1, len(models)):
                             c2 = models[ic2]
+                            r = evaluation_3_chain_core(str(pid)+"-"+str(n_cores_exec), c0, th0, 0, c1, th2, c2)
+                            sysid="%s_(%f,%f)_%s_(%f)_%s" % (
+                            c0.split('/')[-1], th0, 0, c1.split('/')[-1], th2, c2.split('/')[-1])
+                            print(sysid)
+                            records[sysid] = r
 
+                            """
                             # Start process
                             processes[n_cores_exec] = Process(target=evaluation_3_chain_core,
                                                      args=(str(pid)+"-"+str(n_cores_exec), c0, th0, 0, c1, th2, c2, work_done))
@@ -186,6 +192,7 @@ if __name__ == "__main__":
                                     # Save only chain results whose accuracy > best NN
                                     # if r[1].test['system'].accuracy >= front_sorted[-1][1].test['system'].accuracy:
                                     records[r[0]] = r[1]
+                            """
 
         # Crear la meta_data
         meta_data_file = os.path.join(os.environ['FCM'],
