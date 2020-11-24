@@ -3,7 +3,7 @@ from Source.genetic_algorithm.fitting_functions import f2_time_param_penalizatio
 from Source.genetic_algorithm.fitting_functions import make_limits_dict, update_limit_dict
 from Source import io_util as io
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+import matplotlib.cm as cm  
 import numpy as np
 import os
 
@@ -122,7 +122,7 @@ def plot_fitness_evolution(X, Y, label=None, color=None, linestyle=None):
 
     sub_plt = plt.subplot(2, 3, 1)
     sub_plt.grid(True)
-    sub_plt.set_xlabel("Generations")
+    #sub_plt.set_xlabel("Generations")
     sub_plt.set_ylabel("Test Average Fitness Value")
     sub_plt.plot(X, Y_avg, label=label, color=color, linestyle=linestyle)
 
@@ -131,7 +131,7 @@ def plot_fitness_fittest_evolution(X, Y, label=None, color=None, linestyle=None)
 
     sub_plt = plt.subplot(2, 3, 1)
     sub_plt.grid(True)
-    sub_plt.set_xlabel("Generations")
+    #sub_plt.set_xlabel("Generations")
     sub_plt.set_ylabel("Fittest Fitness Value in " + phase)
     sub_plt.plot(X, Y, label=label, color=color, linestyle=linestyle)
 
@@ -148,7 +148,7 @@ def plot_offspring_replacement_evolution(X , Y, label=None, color=None, linestyl
 def plot_repeated_individuals_evolution(X, Y, label=None, color=None, linestyle="-"):
     sub_plt = plt.subplot(2, 3, 3)
     sub_plt.grid(True)
-    sub_plt.set_xlabel("Generations")
+    #sub_plt.set_xlabel("Generations")
     sub_plt.set_ylabel("Ratio Unique")
     sub_plt.set_ylim(bottom=0, top=1)
     sub_plt.plot(X, Y, label=label, linestyle=linestyle, color=color)
@@ -177,8 +177,8 @@ def plot_accuracy_fittest_normalized_evolution(X, Y, label=None, color=None, lin
     sub_plt = plt.subplot(2, 3, 4)
     sub_plt.grid(True)
     sub_plt.set_xlabel("Generations")
-    sub_plt.set_ylabel("Increase "+ phase +" accuracy (%)")
-    sub_plt.plot(X, Y, label=label, linestyle=linestyle, color=color)
+    sub_plt.set_ylabel("Accuracy %")
+    sub_plt.plot(X, Y, label=label, linestyle=linestyle, color=color, linewidth=2)
 
 
 def plot_time_evolution(X, Y, label=None, color=None, linestyle="-"):
@@ -196,7 +196,7 @@ def plot_time_fittest_normalized_evolution(X, Y, label=None, color=None, linesty
     sub_plt.grid(True)
     sub_plt.set_xlabel("Generations")
     sub_plt.set_ylabel("Speedup")
-    sub_plt.plot(X, Y, label=label, linestyle=linestyle, color=color)
+    sub_plt.plot(X, Y, label=label, linestyle=linestyle, color=color, linewidth=2)
 
 
 def plot_parameters_evolution(X, Y, label=None, color=None, linestyle="-"):
@@ -205,7 +205,7 @@ def plot_parameters_evolution(X, Y, label=None, color=None, linestyle="-"):
     sub_plt = plt.subplot(2, 3, 6)
     sub_plt.grid(True)
     sub_plt.set_xlabel("Generations")
-    sub_plt.set_ylabel("Parameters")
+    sub_plt.set_ylabel("Size")
     sub_plt.plot(X, Y_avg, label=label, linestyle=linestyle, color=color)
 
 
@@ -213,14 +213,14 @@ def plot_parameters_fittest_normalized_evolution(X, Y, label=None, color=None, l
     sub_plt = plt.subplot(2, 3, 6)
     sub_plt.grid(True)
     sub_plt.set_xlabel("Generations")
-    sub_plt.set_ylabel("x More Parameters")
-    sub_plt.plot(X, Y, label=label, linestyle=linestyle, color=color)
+    sub_plt.set_ylabel("Size")
+    sub_plt.plot(X, Y, label=label, linestyle=linestyle, color=color, linewidth=2)
 
 
 def plot_complexity_fittest_evolution(X, Y, label=None, color=None, linestyle="-"):
     sub_plt = plt.subplot(2, 3, 2)
     sub_plt.grid(True)
-    sub_plt.set_xlabel("Generations")
+    #sub_plt.set_xlabel("Generations")
     sub_plt.set_ylabel("Number of classifiers")
     sub_plt.plot(X, Y, label=label, linestyle=linestyle, color=color)
 
@@ -238,26 +238,22 @@ if __name__ == "__main__":
                                             'metadata.json')
 
 
-    # Cifar100 a=0.9 0.1
-    ids = [[2401933356951800, 2451166989894097, 7378992440200853],
-           [9137831047978630]]
+    ids = [[3112956269435378, 6134718936153510, 9170761797704102],
+           [1996210465593205, 1615756710652073, 8622554385592526],
+           [8839825908512006, 9693152285889922, 395720464197755],
+           [198336372459804, 7577946756594182, 6479312510815429]]
 
-    # SVHN a=0.8 0.2
-    ids = [[2375126265315306, 7108924607120131, 1019426598047515],
-           [482183001946958]]
+    ids = [[5887046622929778, 3230667902377190, 9291388539387885],
+           [2313545425456159, 9958744202032651, 5878584648419413],
+           [787660664929370, 1238153750827251, 2172577375186651],
+           [5146547257555304, 4642863658773340, 4264509357343793]]
 
-    # Caltech-256 a=0.7 0.3
-    ids = [[9917802718106670, 4134337391174096, 4793822379547094],
-           [7053119233470466]]
 
-    # Cifar100 a=0.9 0.1
-    ids = [[4745120725419392]]
-
-    phase = "test"
-    labels = ["Crossover_2", "Crossover_1_pm=0.9"]
-    line_style = ['-']*2
+    phase = "val"
+    labels = ["EARN pm=0.8", "GP pm=0.8", "EARN pm=0.5", "GP pm=0.5"]
+    line_style = [':', '-.', '--', '-']
     cmap = cm.get_cmap('jet')
-    colors = cmap(np.linspace(0, 1.0, 2))
+    colors = cmap(np.linspace(0, 1.0, 4))
     # colors = np.append(colors, cmap(np.linspace(0, 1.0, 3)), axis=0)
     ##################################################################
 

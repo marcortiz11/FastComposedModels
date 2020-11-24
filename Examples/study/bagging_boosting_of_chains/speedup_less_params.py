@@ -32,21 +32,16 @@ def print_metrics_model(id, r):
 
 if __name__ == "__main__":
 
-    experiment = 'bagging_boosting_of_chains_GA'
+    experiment = 'genetic_algorithm_multinode'
     query_params = {
-        'dataset': "sota_models_caltech256-32-dev_validation",
-        'selection': 'nfit',
-        'experiment': 'bagging_boosting_of_chains_GA_1',
+        "dataset": "sota_models_fashion-mnist-32-dev_validation",
         'iterations': 200,
-        'a':  [
-                1.0,
-                0.0,
-                0.0,
-            ],
-        'k': 10,
-        'population': 1000,
+        'a': [
+            0.7,
+            0.15,
+            0.15,
+        ],
         'offspring': 50,
-        'comment': 'Fitness_normalize_Crossover_v2'
     }
     num = 1
     phase = "test"
@@ -89,7 +84,7 @@ if __name__ == "__main__":
         GA_chains = io.read_pickle(res_loc)
         list_chain_res = list(GA_chains.values())
         list_chain_keys = list(GA_chains.keys())
-        list_fit_vals = np.array(fit_fun.f2_time_param_penalization(list_chain_res, query_params['a'], limit, phase))*-1
+        list_fit_vals = np.array(fit_fun.f2_time_param_penalization(list_chain_res, [0.7, 0.15, 0.15], limit, phase))*-1
 
         sorted = np.argsort(list_fit_vals)
         fittest_model_id = list_chain_keys[sorted[0]]

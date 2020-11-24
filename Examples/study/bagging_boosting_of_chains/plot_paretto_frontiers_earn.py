@@ -259,7 +259,7 @@ if __name__ == "__main__":
     plt.rcParams.update({'font.size': 6})
 
     experiment = 'bagging_boosting_of_chains_GA'
-    id = 3034243351964892
+    id = 4289297487379981
     experiment_dir = os.path.join(os.environ['FCM'], 'Examples', 'compute', experiment)
     meta_data_file = os.path.join(experiment_dir, 'results', 'metadata.json')
     earn_evaluations_location = results_manager.get_results_by_id(meta_data_file, id)

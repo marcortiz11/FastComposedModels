@@ -57,6 +57,25 @@ def plot_optimal_combinations_merger(R, resolution=100, label="", color=None, li
     plt.plot(histo.get_x(), histo.get_y(), label=label, color=color, linestyle=linestyle)
 
 
+def plot_optimal_combinations_chain(R, R_models, resolution=100, label="", color=None, linestyle=None):
+    ids = list(R.keys())
+    print(ids[100].split('__'))
+    y = np.array([R[id].test["system"].accuracy for id in ids if len(R[id].test.keys()) > 2])
+    x_all = np.array([R_models[key].test["system"].accuracy for id in ids if len(R[id].test.keys()) > 2 for key in R[id].test.keys() if "trigger" not in key and "system" not in key])
+    x_all = x_all.reshape(-1, 3)
+    x_min = np.min(x_all, axis=1)
+    x_max = np.max(x_all, axis=1)
+    x = x_max - x_min  # Worst vs Best DNNs in ensemble
+    y = y - x_max  # Ensemble accuracy vs best DNN accuracy
+
+    # Histogram
+    histo = Y_Histogram(resolution, 1)
+    histo.update(y, x)
+
+    # Figure
+    plt.plot(histo.get_x(), histo.get_y(), label=label, color=color, linestyle=linestyle)
+
+
 if __name__ == "__main__":
 
     plt.grid(True)
@@ -71,24 +90,30 @@ if __name__ == "__main__":
            1943013241626030,
            9283423602893484,
            4453353588233325,
-           1600106112124184]
+           1600106112124184,
+           6104062115638786]
 
     label = ["Bagging average",
              "Bagging voting",
              "Bagging max",
              "Boosting average",
              "Boosting voting",
-             "Boosting max"]
+             "Boosting max",
+             "Chain"]
 
     cmap = cm.get_cmap('jet')
     colors = cmap(np.linspace(0, 1.0, 3))
-    linestyle = ["-", "-", "-", "--", "--", "--"]
+    linestyle = ["-", "-", "-", "--", "--", "--", "-."]
 
     for j, id in enumerate(ids):
         result_location = os.path.join(result_manager.get_results_by_id(metadata_file, id), "results_ensembles")
         exec_params = result_manager.get_fieldval_by_id(metadata_file, id, "params")[0]
         R = io.read_pickle(result_location)
-        plot_optimal_combinations_merger(R, resolution=50, label=label[j], color=colors[j%3], linestyle=linestyle[j])
+        if "hain" in label[j]:
+            R_models = io.read_pickle(os.path.join(result_manager.get_results_by_id(metadata_file, id), "models.pkl"))
+            plot_optimal_combinations_chain(R, R_models, resolution=50, label=label[j], color=colors[j % 3], linestyle=linestyle[j])
+        # plot_optimal_combinations_merger(R, resolution=50, label=label[j], color=colors[j%3], linestyle=linestyle[j])
+
 
     plt.legend()
     plt.show()
