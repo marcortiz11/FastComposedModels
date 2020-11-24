@@ -110,13 +110,13 @@ def plot_population(R, R_models, iter, fit=None):
     plt.xlabel("Time (s)")
     plt.ylabel("Test accuracy")
 
-    x = [v.test['system'].time for (k, v) in R_models.items()]
-    y = [v.test['system'].accuracy for (k, v) in R_models.items()]
+    x = [v.val['system'].time for (k, v) in R_models.items()]
+    y = [v.val['system'].accuracy for (k, v) in R_models.items()]
     plt.scatter(x, y, label="Initial population", color="black", s=40)
     plt.hlines(max(y), 0, max(x), color="red")
 
-    x = [v.test['system'].time for (k, v) in R.items()]
-    y = [v.test['system'].accuracy for (k, v) in R.items()]
+    x = [v.val['system'].time for (k, v) in R.items()]
+    y = [v.val['system'].accuracy for (k, v) in R.items()]
 
     if fit is not None:
         plt.scatter(x, y, c=fit, label="Alive individuals", s=10)

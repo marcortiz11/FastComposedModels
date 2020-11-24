@@ -27,14 +27,16 @@ def take_action(ensemble, Qtable, epsilon, pool_dnns, classifier_path):
     :return: Tuple || Action chosen
     """
 
-    if random() < 1-epsilon and \
-            max(Qtable.get(ensemble, {}).values(), default=0) > 0:
+    pool_not_in_ensemble = [c_id for c_id in pool_dnns if c_id not in ensemble.get_message().classifier]
+
+    if random() < 1-epsilon and len(Qtable.get(ensemble, {}).values()) > 0:
+        print("Max")
         return list(Qtable[ensemble].keys())[np.argmax(Qtable[ensemble].values())]
     else:
         total_num_actions = 0
         # Extend Chain actions
         tail_chains = [c.id for c in ensemble.get_message().classifier if c.component_id == ""]
-        a = len(pool_dnns) * len(tail_chains)
+        a = len(pool_not_in_ensemble) * len(tail_chains)
         # Increase/Decrease threshold actions
         non_tail = [c.id for c in ensemble.get_message().classifier if c.component_id != ""]
         b = len(non_tail)
@@ -43,7 +45,7 @@ def take_action(ensemble, Qtable, epsilon, pool_dnns, classifier_path):
 
         if len(ensemble.get_message().merger) > 0:
             # Add classifier to the merger actions
-            c = len(pool_dnns)
+            c = len(pool_not_in_ensemble)
             # Change merging protocol actions
             merger_id = list(ensemble.get_message().merger)[0].id
             merging_protocols = list(fcm.Merger.MergeType)
@@ -53,7 +55,7 @@ def take_action(ensemble, Qtable, epsilon, pool_dnns, classifier_path):
         action = None
         r = random() * total_num_actions
         if r < a:  # Extend chain
-            c_id = choice(pool_dnns)
+            c_id = choice(pool_not_in_ensemble)
             c_file = os.path.join(classifier_path, c_id)
             action = (opm.extend_merged_chain, choice(tail_chains), c_id, 0.5, c_file)
         if a < r < a+b:  # Increase threshold
@@ -61,7 +63,7 @@ def take_action(ensemble, Qtable, epsilon, pool_dnns, classifier_path):
         if a+b < r < a+2*b:  # Decrease threshold
             action = (opm.update_threshold, choice(non_tail), -0.1)
         if a+2*b < r < a+2*b+c:  # Add one more classifier to the merger
-            c_id = choice(pool_dnns)
+            c_id = choice(pool_not_in_ensemble)
             c_file = os.path.join(classifier_path, c_id)
             action = (opm.add_classifier_to_merger, merger_id, c_id, c_file)
         if r > a+2*b+c:  # Change merging protocol
@@ -73,14 +75,14 @@ def take_action(ensemble, Qtable, epsilon, pool_dnns, classifier_path):
 def argument_parse(argv):
     parser = argparse.ArgumentParser(usage="main.py [options]",
                                      description="Optimal Ensemble Generation Policy with Q-Learning")
-    parser.add_argument("--dataset", default="sota_models_cifar10-32-dev_validation", help="Datasets to evaluate d1 d2 d3, default=*")
+    parser.add_argument("--dataset", default="sota_models_caltech256-32-dev_validation", help="Datasets to evaluate d1 d2 d3, default=*")
     # Search-space params
-    parser.add_argument("--episodes", default=10000, type=int, help="Number of episodes")
-    parser.add_argument("--steps", default=40, type=int, help="Number of actions explored in each episode")
+    parser.add_argument("--episodes", default=20000, type=int, help="Number of episodes")
+    parser.add_argument("--steps", default=25, type=int, help="Number of actions explored in each episode")
     parser.add_argument("--alpha", default=0.2, type=float, help="Q-Learning's learning rate parameter")
-    parser.add_argument("--gamma", default=0.99, type=float, help="Long-Term reward gamma factor")
-    parser.add_argument("--e", type=float, default=0.25)
-    parser.add_argument("--w", nargs='+', default=[0.5, 0.5, 0], type=float, help="Fitting function's weight 0..1 where [acc, time, params]")
+    parser.add_argument("--gamma", default=0.9, type=float, help="Long-Term reward gamma factor")
+    parser.add_argument("--e", default=0.8, type=float)
+    parser.add_argument("--w", default=[1, 0, 0], nargs='+', type=float, help="Fitting function's weight 0..1 where [acc, time, params]")
     # Execution parameters
     parser.add_argument("--plot", default=0, type=int, help="Plot episode reward")
     parser.add_argument("--comment", default="", type=str, help="")
@@ -125,15 +127,17 @@ if __name__ == "__main__":
     # Start Q-loop
     bar = ProgressBar(args.steps)
     R_episodes = []
+    Acc_episodes = []
+
     for episode in range(args.episodes):
         print("EPISODE %d" % episode)
-        ensemble = S_initial[(episode%len(S_initial))]
+        ensemble = S_initial[(episode % len(S_initial))]
         ensemble_eval = evaluate(ensemble, ensemble.get_start(), phases=["val"])
         R = 0   # Cumulative episode reward
 
         t_start = time.time()
         for step in range(args.steps):
-            print(bar, end="\r")
+            # print(bar, end="\r")
 
             # Take an action
             a = take_action(ensemble, Qtable, args.e, classifier_files, classifier_path)
@@ -144,8 +148,7 @@ if __name__ == "__main__":
 
             # Evaluate ensemble
             ensemble_eval_new = evaluate(ensemble_new, ensemble_new.get_start(), phases=["val"])
-            r = fit([ensemble_eval_new], args.w, limits, phase="val")[0] - \
-                fit([ensemble_eval], args.w, limits, phase="val")[0]
+            r = fit([ensemble_eval_new], args.w, limits, phase="val")[0]
 
             # Update Q-Table
             if not Qtable.get(ensemble):
@@ -159,7 +162,11 @@ if __name__ == "__main__":
             ensemble_eval = ensemble_eval_new
             R += pow(args.gamma, step)*r
 
+        # Decrease epsilon: Reduce exploration, exploit learned best actions
+        args.e -= 1/args.episodes
+
         R_episodes.append(R)
+        Acc_episodes.append(ensemble_eval.val["system"].accuracy)
         print("\t Episode reward: %f" % R)
         print("\t Episode elapsed time: %f sec" % (time.time() - t_start))
         print()
@@ -188,4 +195,6 @@ if __name__ == "__main__":
     results_loc = os.path.join('Examples/compute/qlearning/results', args.dataset, id)
     comments = args.comment
     meta_data_result = manager_results.metadata_template(id, args.dataset, results_loc, comments)
-    manager_results.save(meta_data_file, meta_data_result, params, ("reward_evolution", R_episodes), ("qtable", Qtable))
+    manager_results.save(meta_data_file, meta_data_result, params, ("reward_evolution", R_episodes),
+                                                                    ("qtable", Qtable),
+                                                                    ("accuracy_evolution", Acc_episodes))

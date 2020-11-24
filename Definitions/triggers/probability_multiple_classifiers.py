@@ -58,7 +58,7 @@ def train_fit(sys, id_trigger):
     # Test
     test = __get_trigger_raw_data(data, "test")
     # Train
-    train = None #__get_trigger_raw_data(data, "train")
+    train = __get_trigger_raw_data(data, "train")
     # Validation
     val = None
     if data.source.HasField('val_path'):

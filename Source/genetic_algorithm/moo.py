@@ -4,7 +4,7 @@
 
 import numpy as np
 from sortedcontainers import SortedSet as sortset
-from hvwfg import wfg
+from deap.tools._hypervolume.hv import hypervolume
 from math import log10
 
 
@@ -81,7 +81,7 @@ def compute_crowding_distance(obj: np.ndarray) -> np.ndarray:
     return D
 
 
-def hvolume(obj: np.ndarray, ref: np.ndarray=None) -> float:
+def compute_hvolume(obj: np.ndarray, ref: np.ndarray=None) -> float:
     assert len(obj.shape) == 2
 
     if ref is None:
@@ -90,8 +90,7 @@ def hvolume(obj: np.ndarray, ref: np.ndarray=None) -> float:
     valid = np.all(np.less(obj, ref), axis=1)
     obj = obj[valid]
     obj = obj[non_dominated_selection(obj)]
-    hv = wfg(obj, ref)
-
+    hv = hypervolume(obj, ref)
     return hv
 
 
@@ -104,7 +103,7 @@ def area_rect(h, w):
     return a
 
 
-def compute_hvolume(obj: np.ndarray, r: np.ndarray) -> float:
+def compute_hvolume_custom(obj: np.ndarray, r: np.ndarray) -> float:
 
     """
     Hypervolume computation algorithm for 3 objectives (Beume.N et al 2009)

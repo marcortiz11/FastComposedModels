@@ -215,7 +215,7 @@ def evaluate_process(P, pi, R, cores, phases):
         i += cores
 
 
-def evaluate_population(P, phases=['test', 'val']):
+def evaluate_population(P, phases=["test", "val"]):
 
     R = [ev.Results]*len(P)
 
