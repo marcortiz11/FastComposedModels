@@ -1,5 +1,6 @@
 import Source.system_evaluator as eval
 import Source.FastComposedModels_pb2 as fcm
+from Source.math_util import softmax
 import numpy as np
 import math
 
@@ -30,14 +31,6 @@ def adaboost_samme_label(Logits, gt):
         w_instances = w_instances / sum(w_instances)
 
     return alphas
-
-
-def softmax(L: np.ndarray) -> np.ndarray:
-    # Numerically stable softmax function
-    m = np.amax(L, axis=1)[:, None]
-    X = np.exp(L - m)
-    P = X / X.sum(axis=1)[:, None]
-    return P
 
 
 def adaboost_samme_logit(Logits, gt):

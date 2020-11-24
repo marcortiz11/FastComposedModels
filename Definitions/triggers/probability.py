@@ -1,5 +1,6 @@
 import Source.make_util as make
 import Source.io_util as io
+from Source.math_util import softmax
 import numpy as np
 
 
@@ -13,14 +14,6 @@ def __parameters():
 
 def __time():
     return 0
-
-
-def softmax(L: np.ndarray) -> np.ndarray:
-    # Numerically stable softmax function
-    m = np.amax(L, axis=1)[:, None]
-    X = np.exp(L - m)
-    P = X / X.sum(axis=1)[:, None]
-    return P
 
 
 def __get_trigger_raw_data(data, phase):

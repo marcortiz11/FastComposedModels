@@ -1,5 +1,6 @@
 import Source.make_util as make
 import Source.io_util as io
+from Source.math_util import softmax
 import numpy as np
 
 def __ops():
@@ -26,8 +27,7 @@ def __get_trigger_raw_data(data, phase):
     dataset = io.read_pickle(data_source)
 
     L = dataset['logits']
-    dividend = np.sum(np.exp(L), axis=1)
-    P = np.exp(L) / dividend[:, None]
+    P = softmax(L)
     ths = dataset['ths']
     gt = dataset['gt']
     ids = dataset['id']
