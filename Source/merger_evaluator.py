@@ -32,14 +32,21 @@ def adaboost_samme_label(Logits, gt):
     return alphas
 
 
+def softmax(L: np.ndarray) -> np.ndarray:
+    # Numerically stable softmax function
+    m = np.amax(L, axis=1)[:, None]
+    X = np.exp(L - m)
+    P = X / X.sum(axis=1)[:, None]
+    return P
+
+
 def adaboost_samme_logit(Logits, gt):
     size = len(gt)
     w_instances = np.ones(int(size)) / size
     alphas = []
     for im in range(Logits.shape[1]):
         predictions = np.argmax(Logits[:, im, :], axis=1)
-        dividend = np.sum(np.exp(Logits[:, im, :]), axis=1)
-        P = np.exp(Logits[:, im, :]) / dividend[:, None]
+        P = softmax(Logits[:, im, :])
         max_probability = np.max(P, axis=1)
         diff = 1 - max_probability
 
