@@ -1,8 +1,7 @@
 import torch
-from enum import Enum
 from Source.io_util import read_pickle
 from Source.pytorch.component import Component
-from typing import List
+from enum import Enum
 
 
 class Split(Enum):
@@ -43,3 +42,9 @@ class ClassifierMetadata(Component):
 
     def set_evaluation_split(self, split: Split):
         self.split = split
+
+    def update_model(self, path: str):
+        self.path = path
+
+    def get_model(self):
+        return self.path

@@ -2,11 +2,12 @@ import torch
 from typing import List
 from Source.pytorch.classifier_metadata import ClassifierMetadata
 from Source.pytorch.trigger import Trigger
+from Source.pytorch.component import Component
 
 
-class Chain(torch.nn.Module):
+class Chain(Component):
 
-    def __init__(self, chained_modules: List[torch.nn.Module]):
+    def __init__(self, chained_modules: List[Component]):
         if len(chained_modules) == 0:
             raise ValueError("Chain should have length > 0")
 
@@ -16,7 +17,6 @@ class Chain(torch.nn.Module):
         self.register_buffer("output", None)
 
     def forward(self, x):
-
         if not 0 < len(x.shape) < 5:
             raise ValueError("Input tensor x, should have 0 < dim < 4")
         if not x.shape[0] > 0:
@@ -47,5 +47,7 @@ class Chain(torch.nn.Module):
                     return self.output
             else:
                 raise ValueError("Components forming the chain module should be of Classifier or Trigger type")
-
         return self.output
+
+    def extend_chain(self, component_list: List[Component]):
+        self.chained_modules.extend(component_list)

@@ -1,9 +1,11 @@
 import torch
+from typing import List
 from Source.pytorch.component import Component
 from Source.pytorch.trigger import Trigger
 from Source.pytorch.classifier_metadata import ClassifierMetadata, Split
 from Source.pytorch.merger import Merger
-from typing import List
+from Source.pytorch.chain import Chain
+from Source.io_util import read_pickle
 
 
 class System(torch.nn.Module):
@@ -11,14 +13,33 @@ class System(torch.nn.Module):
     def __init__(self, graph: torch.nn.Module, split=Split.TEST):
         super().__init__()
         self.graph = graph
+        self.split = split
         self.set_evaluation_split(split)
 
-    def forward(self, x):
+    def forward(self, x=None):
+        if len(self.get_classifiers()) == 0:
+            raise ValueError("System empty of classifiers")
+
+        if x is None:
+            metadata = read_pickle(self.get_classifiers()[0].get_model())
+            if self.split == Split.TRAIN:
+                num_samples = len(metadata["train"]["id"])
+                x = torch.arange(num_samples).long()
+            elif self.split == Split.TEST:
+                num_samples = len(metadata["test"]["id"])
+                x = torch.arange(num_samples).long()
+            else:
+                num_samples = len(metadata["val"]["id"])
+                x = torch.arange(num_samples).long()
+
         return self.graph(x)
 
     def set_evaluation_split(self, split: Split):
         for classifier in self.get_classifiers():
             classifier.set_evaluation_split(split)
+
+    def get_evaluation_split(self):
+        return self.split
 
     def get_components(self) -> List[Component]:
         component_list = []
@@ -47,6 +68,13 @@ class System(torch.nn.Module):
             if isinstance(module, Trigger):
                 trigger_list.append(module)
         return trigger_list
+
+    def get_chains(self) -> List[Component]:
+        chain_list = []
+        for module in self.graph.modules():
+            if isinstance(module, Chain):
+                chain_list.append(module)
+        return chain_list
 
     def get_sysid(self):
         return hash(self)
