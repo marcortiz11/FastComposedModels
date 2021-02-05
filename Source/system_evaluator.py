@@ -1,4 +1,7 @@
 import Source.system_evaluator_utils as eval_utils
+from Source.pytorch.system import System
+from Source.pytorch.classifier_metadata import Split
+from typing import List
 import Source.make_util as make
 import Source.io_util as io
 import numpy as np
@@ -227,7 +230,7 @@ def __evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=No
     return contribution
 
 
-def evaluate(sys, start_id, check_classifiers=False, evaluate_train=False, classifier_dict=None, phases=["test"]):
+def evaluate(sys, check_classifiers=False, evaluate_train=False, classifier_dict=None, phases=[Split.TEST, Split.VAL]):
 
     """
     :param sys: Built system to evaluate
@@ -240,6 +243,56 @@ def evaluate(sys, start_id, check_classifiers=False, evaluate_train=False, class
             of each component and the system in general
     """
 
+    if isinstance(sys, System):
+        eval = evaluate_pytorch(sys, phases)
+
+    else:
+        eval = Results()
+        eval.train = dict()
+        eval.test = dict()
+        eval.val = dict()
+
+        eval.test['system'] = Metrics()
+        eval.train['system'] = Metrics()
+        eval.val['system'] = Metrics()
+
+        assert sys.get_start() is not None
+        component = sys.get(sys.get_start())
+
+        if "test" in phases or not phases:  # Si no s'especifica, sempre evalua el dataset de test
+            contribution = __evaluate(sys, eval.test, component, check_classifiers, classifier_dict)
+            eval.test['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution['predictions'], contribution['gt'])
+            eval.test['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.test.items()
+                                              if classifier_id != 'system'])
+            # eval.test['system'].instance_model = contribution['model']
+
+        contribution_train = None
+        if "train" in phases or evaluate_train:
+            contribution_train = __evaluate(sys, eval.train, component, check_classifiers, classifier_dict, phase="train")
+            eval.train['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution_train['predictions'], contribution_train['gt'])
+            eval.train['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.train.items() \
+                                              if classifier_id != 'system'])
+            # eval.train['system'].instance_model = contribution_train['model']
+
+        contribution_val = None
+        if "val" in phases:
+            contribution_val = __evaluate(sys, eval.val, component, check_classifiers, classifier_dict, phase="val")
+            eval.val['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution_val['predictions'], contribution_val['gt'])
+            eval.val['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.val.items() \
+                                                if classifier_id != 'system'])
+            # eval.val['system'].instance_model = contribution_val['model']
+
+        # TODO: Falta que validation set es pugui guardar com a diccionari
+        if classifier_dict is not None:
+            fill_classifier(eval, classifier_dict, contribution, contribution_train, contribution_val)
+
+    return eval
+
+
+def evaluate_pytorch(ensemble: System, phases: List[Split], dataset=None) -> Results:
+
+    import torch
+
     eval = Results()
     eval.train = dict()
     eval.test = dict()
@@ -249,33 +302,28 @@ def evaluate(sys, start_id, check_classifiers=False, evaluate_train=False, class
     eval.train['system'] = Metrics()
     eval.val['system'] = Metrics()
 
-    component = sys.get(start_id)
+    if Split.TRAIN in phases:
+        ensemble.set_evaluation_split(Split.TRAIN)
+        predictions = ensemble(None)  # Evaluate ensemble
+        gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["train"]["gt"])
+        eval.train['system'].accuracy = torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)) / gt_labels.numel()
+        eval.train['system'].time = ensemble.get_processing_time()
+        eval.train['system'].params = ensemble.get_num_parameters()
 
-    if "test" in phases or not phases:  # Si no s'especifica, sempre evalua el dataset de test
-        contribution = __evaluate(sys, eval.test, component, check_classifiers, classifier_dict)
-        eval.test['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution['predictions'], contribution['gt'])
-        eval.test['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.test.items()
-                                          if classifier_id != 'system'])
-        # eval.test['system'].instance_model = contribution['model']
+    if Split.TEST in phases:
+        ensemble.set_evaluation_split(Split.TEST)
+        predictions = ensemble(None)  # Evaluate ensemble
+        gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["test"]["gt"])
+        eval.test['system'].accuracy = torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)) / gt_labels.numel()
+        eval.test['system'].time = ensemble.get_processing_time()
+        eval.test['system'].params = ensemble.get_num_parameters()
 
-    contribution_train = None
-    if "train" in phases or evaluate_train:
-        contribution_train = __evaluate(sys, eval.train, component, check_classifiers, classifier_dict, phase="train")
-        eval.train['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution_train['predictions'], contribution_train['gt'])
-        eval.train['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.train.items() \
-                                          if classifier_id != 'system'])
-        # eval.train['system'].instance_model = contribution_train['model']
-
-    contribution_val = None
-    if "val" in phases:
-        contribution_val = __evaluate(sys, eval.val, component, check_classifiers, classifier_dict, phase="val")
-        eval.val['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution_val['predictions'], contribution_val['gt'])
-        eval.val['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.val.items() \
-                                            if classifier_id != 'system'])
-        # eval.val['system'].instance_model = contribution_val['model']
-
-    # TODO: Falta que validation set es pugui guardar com a diccionari
-    if classifier_dict is not None:
-        fill_classifier(eval, classifier_dict, contribution, contribution_train, contribution_val)
+    if Split.VAL in phases:
+        ensemble.set_evaluation_split(Split.VAL)
+        predictions = ensemble(None)  # Evaluate ensemble
+        gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["val"]["gt"])
+        eval.val['system'].accuracy = torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)) / gt_labels.numel()
+        eval.val['system'].time = ensemble.get_processing_time()
+        eval.val['system'].params = ensemble.get_num_parameters()
 
     return eval
