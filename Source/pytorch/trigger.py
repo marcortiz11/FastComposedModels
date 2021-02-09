@@ -11,8 +11,8 @@ class Trigger(Component):
     def forward(self, logits: torch.Tensor) -> torch.Tensor:
         probability = torch.nn.Softmax(dim=1)(logits)
         max_prob_class = torch.max(probability, dim=1)
-        mask = torch.gt(max_prob_class.values, self.th)
-        return mask
+        mask = torch.le(max_prob_class.values, self.th)
+        return mask  # mask=1 refine; mask=0 okay
 
     def update_threshold(self, th: float):
         self.th = torch.nn.Parameter(torch.tensor(th))

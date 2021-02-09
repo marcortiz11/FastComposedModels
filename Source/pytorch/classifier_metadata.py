@@ -36,8 +36,9 @@ class ClassifierMetadata(Component):
             precomputed_pred = metadata['test']['logits']
         else:
             precomputed_pred = metadata['val']['logits']
+
         precomputed_pred = torch.from_numpy(precomputed_pred)
-        self.update_processing_time(torch.numel(ids) * time_batch_128/128.0)
+        self.update_processing_time(ids.numel() * time_batch_128/128.0)
         return precomputed_pred[ids]
 
     def set_evaluation_split(self, split: Split):
@@ -48,3 +49,4 @@ class ClassifierMetadata(Component):
 
     def get_model(self):
         return self.path
+

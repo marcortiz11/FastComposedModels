@@ -23,7 +23,7 @@ class Chain(Component):
             raise ValueError("Number of samples (dim=0) should be greater than 0")
 
         # Assuming x = [N, 1, h, w]
-        self.x_local_ids = torch.range(0, x.shape[0]-1, dtype=torch.long)
+        self.x_local_ids = torch.arange(x.shape[0]-1, dtype=torch.long)
 
         for c in self.chained_modules:
 

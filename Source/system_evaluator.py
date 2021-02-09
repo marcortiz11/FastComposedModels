@@ -259,7 +259,7 @@ def evaluate(sys, check_classifiers=False, evaluate_train=False, classifier_dict
         assert sys.get_start() is not None
         component = sys.get(sys.get_start())
 
-        if "test" in phases or not phases:  # Si no s'especifica, sempre evalua el dataset de test
+        if Split.TEST in phases or not phases:  # Si no s'especifica, sempre evalua el dataset de test
             contribution = __evaluate(sys, eval.test, component, check_classifiers, classifier_dict)
             eval.test['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution['predictions'], contribution['gt'])
             eval.test['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.test.items()
@@ -267,7 +267,7 @@ def evaluate(sys, check_classifiers=False, evaluate_train=False, classifier_dict
             # eval.test['system'].instance_model = contribution['model']
 
         contribution_train = None
-        if "train" in phases or evaluate_train:
+        if Split.TRAIN in phases or evaluate_train:
             contribution_train = __evaluate(sys, eval.train, component, check_classifiers, classifier_dict, phase="train")
             eval.train['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution_train['predictions'], contribution_train['gt'])
             eval.train['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.train.items() \
@@ -275,7 +275,7 @@ def evaluate(sys, check_classifiers=False, evaluate_train=False, classifier_dict
             # eval.train['system'].instance_model = contribution_train['model']
 
         contribution_val = None
-        if "val" in phases:
+        if Split.VAL in phases:
             contribution_val = __evaluate(sys, eval.val, component, check_classifiers, classifier_dict, phase="val")
             eval.val['system'].accuracy = eval_utils.get_accuracy_dictionary(contribution_val['predictions'], contribution_val['gt'])
             eval.val['system'].params = sum([classifier_eval.params for classifier_id, classifier_eval in eval.val.items() \
@@ -306,7 +306,7 @@ def evaluate_pytorch(ensemble: System, phases: List[Split], dataset=None) -> Res
         ensemble.set_evaluation_split(Split.TRAIN)
         predictions = ensemble(None)  # Evaluate ensemble
         gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["train"]["gt"])
-        eval.train['system'].accuracy = torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)) / gt_labels.numel()
+        eval.train['system'].accuracy = (torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)).float() / gt_labels.numel()).item()
         eval.train['system'].time = ensemble.get_processing_time()
         eval.train['system'].params = ensemble.get_num_parameters()
 
@@ -314,7 +314,7 @@ def evaluate_pytorch(ensemble: System, phases: List[Split], dataset=None) -> Res
         ensemble.set_evaluation_split(Split.TEST)
         predictions = ensemble(None)  # Evaluate ensemble
         gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["test"]["gt"])
-        eval.test['system'].accuracy = torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)) / gt_labels.numel()
+        eval.test['system'].accuracy = (torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)).float() / gt_labels.numel()).item()
         eval.test['system'].time = ensemble.get_processing_time()
         eval.test['system'].params = ensemble.get_num_parameters()
 
@@ -322,7 +322,7 @@ def evaluate_pytorch(ensemble: System, phases: List[Split], dataset=None) -> Res
         ensemble.set_evaluation_split(Split.VAL)
         predictions = ensemble(None)  # Evaluate ensemble
         gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["val"]["gt"])
-        eval.val['system'].accuracy = torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)) / gt_labels.numel()
+        eval.val['system'].accuracy = (torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)).float() / gt_labels.numel()).item()
         eval.val['system'].time = ensemble.get_processing_time()
         eval.val['system'].params = ensemble.get_num_parameters()
 

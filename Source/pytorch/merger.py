@@ -1,44 +1,10 @@
 import torch
+from torch.nn import ModuleList
+from torch.nn.functional import one_hot
 from enum import Enum
 from typing import List
 from Source.pytorch.component import Component
 from warnings import warn
-
-
-def protocol_average(x, merged_modules: torch.nn.ModuleList) -> torch.Tensor:
-    Y = torch.tensor(None)
-    for m in merged_modules:
-        if Y is None:
-            Y = m(x)
-        else:
-            Y.add_(m(x))  # In-place operations
-    Y /= len(merged_modules)
-    return Y
-
-
-def protocol_voting(x, merged_modules: torch.nn.ModuleList) -> torch.Tensor:
-    warn("Some tensor operations in the voting merging do not support CUDA")
-
-    n_classes = len(merged_modules[0](x[0]))
-    tensors = tuple(m(x).argmax(dim=1)[:, None] for m in merged_modules)  # Assuming m(x) predictions 2-D tensor
-    class_predictions = torch.cat(tensors, dim=1)  # row tensor predictions concatenated along axis 1
-    voting = class_predictions.mode().values
-    Y = torch.nn.functional.one_hot(voting, num_classes=n_classes)  # Returns a probability distribution
-    return Y
-
-
-def protocol_max(x, merged_modules: torch.nn.ModuleList) -> torch.Tensor:
-    warn("Max protocol is uneficient, and does not support CUDA")
-
-    tuple_pred = tuple(m(x) for m in merged_modules)
-    stack_red = torch.stack(tuple_pred, dim=2)
-    max_prob_pred = torch.max(stack_red, dim=1).values
-    valid_pd = max_prob_pred.argmax(dim=1)
-    Y = torch.empty_like(tuple_pred[0])
-    for i in range(x.shape[0]):
-        Y[i, :] = tuple_pred[valid_pd[i]][i]
-
-    return Y
 
 
 class MergeProtocol(Enum):
@@ -52,23 +18,57 @@ class MergeProtocol(Enum):
 
 class Merger(Component):
 
+    def protocol_average(self, x) -> torch.Tensor:
+        for m in self.merged_modules:
+            if self.output is None:
+                self.output = m(x)
+            else:
+                self.output.add_(m(x))
+        self.output.div_(len(self.merged_modules))
+        return self.output
+
+    def protocol_voting(self, x) -> torch.Tensor:
+        warn("Some tensor operations in the voting merging do not support CUDA")
+
+        n_classes = len(self.merged_modules[0](x[0]))
+        tensors = tuple(m(x).argmax(dim=1)[:, None] for m in self.merged_modules)  # Assuming m(x) predictions 2-D tensor
+        class_predictions = torch.cat(tensors, dim=1)
+        voting = class_predictions.mode().values
+        self.output = one_hot(voting, num_classes=n_classes).float()  # Returns a probability distribution
+        return self.output
+
+    def protocol_max(self, x) -> torch.Tensor:
+        warn("Max protocol is uneficient, and does not support CUDA")
+
+        tuple_pred = tuple(m(x) for m in self.merged_modules)
+        stack_red = torch.stack(tuple_pred, dim=2)
+        max_prob_pred = torch.max(stack_red, dim=1).values
+        valid_pd = max_prob_pred.argmax(dim=1)
+        # Fill the output with the valid distribution
+        self.output = torch.empty_like(tuple_pred[0])
+        for i in torch.unique(valid_pd):
+            idx = torch.where(valid_pd == i)[0]
+            self.output[idx, :] = tuple_pred[i][idx, :]
+        return self.output
+
     def __init__(self, merged_modules: List[Component], protocol=MergeProtocol.AVERAGE):
         if len(merged_modules) == 0:
             raise ValueError("Number of merged components has to be > 0")
 
         super().__init__(p=1, t=0)
         self.protocol = protocol
-        self.merged_modules = torch.nn.ModuleList(merged_modules)
+        self.merged_modules = ModuleList(merged_modules)
+        self.register_buffer("output", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        pred = None
         if self.protocol == MergeProtocol.AVERAGE:
-            pred = protocol_average(x, self.merged_modules)
+            return self.protocol_average(x)
         elif self.protocol == MergeProtocol.VOTING:
-            pred = protocol_voting(x, self.merged_modules)
+            return self.protocol_voting(x)
         elif self.protocol == MergeProtocol.MAX:
-            pred = protocol_max(x, self.merged_modules)
-        return pred
+            return self.protocol_max(x)
+        else:
+            raise ValueError("Merging protocol not supported")
 
     def get_merge_protocol(self):
         return self.protocol

@@ -59,7 +59,7 @@ message Merger {
 		ADABOOST_LOGIT_WEIGHTS_MAX_INFERENCE = 7;
 		ADABOOST_LABEL_WEIGHTS_MAX_INFERENCE = 8;
 	}
-	required MergeType merge_type = 2 [default = AVERAGE];
+	required MergeType merge_type = 0 [default = AVERAGE];
 	repeated string merged_ids = 3;
 	optional string component_id = 4;
 }

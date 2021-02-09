@@ -107,7 +107,7 @@ def get_logits_merged_components(sys, results, c, input_ids=None, check_classifi
         if check_classifiers:
             eval.check_valid_classifier(component)
 
-        contribution_component = eval.__evaluate(sys, results, component, check_classifiers, None,
+        contribution_component = eval.__evaluate(sys, results, component, False, None,
                                             input_ids=input_ids, phase=phase)
 
         ids = np.array([key for key in contribution_component['gt'].keys()])
@@ -142,7 +142,7 @@ def get_logits_merged_components(sys, results, c, input_ids=None, check_classifi
 def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None, phase="test"):
     contribution = {}
 
-    Logits, Gt , Ids = get_logits_merged_components(sys, results, c, check_classifiers=check_classifiers, phase=phase)
+    Logits, Gt , Ids = get_logits_merged_components(sys, results, c, check_classifiers=False, phase=phase)
 
     # Apply the merge technique
     if c.merge_type == fcm.Merger.AVERAGE:
@@ -161,7 +161,7 @@ def evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=None
 
         train = dict()  # Fake variable just to obtain predictions during training
         train['system'] = eval.Metrics()
-        Logits_train, Gt_train, _ = get_logits_merged_components(sys, train, c, check_classifiers=check_classifiers, phase="train")
+        Logits_train, Gt_train, _ = get_logits_merged_components(sys, train, c, check_classifiers=False, phase="train")
 
         if c.merge_type == fcm.Merger.ADABOOST_LABEL_WEIGHTS_LOGIT_INFERENCE:
             w_models = adaboost_samme_label(Logits_train, Gt_train)

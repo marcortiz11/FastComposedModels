@@ -1,4 +1,5 @@
-import torch
+from torch.nn import Module
+from torch import arange
 from typing import List
 from Source.pytorch.component import Component
 from Source.pytorch.trigger import Trigger
@@ -8,13 +9,13 @@ from Source.pytorch.chain import Chain
 from Source.io_util import read_pickle
 
 
-class System(torch.nn.Module):
+class System(Module):
 
-    def __init__(self, graph: torch.nn.Module, split=Split.TEST):
+    def __init__(self, graph: Module, split=Split.TEST):
         super().__init__()
         self.graph = graph
         self.split = split
-        self.set_evaluation_split(split)
+        self.set_evaluation_split(self.split)
 
     def forward(self, x=None):
         if len(self.get_classifiers()) == 0:
@@ -24,19 +25,22 @@ class System(torch.nn.Module):
             metadata = read_pickle(self.get_classifiers()[0].get_model())
             if self.split == Split.TRAIN:
                 num_samples = len(metadata["train"]["id"])
-                x = torch.arange(num_samples).long()
+                x = arange(num_samples).long()
             elif self.split == Split.TEST:
                 num_samples = len(metadata["test"]["id"])
-                x = torch.arange(num_samples).long()
-            else:
+                x = arange(num_samples).long()
+            elif self.split == Split.VAL:
                 num_samples = len(metadata["val"]["id"])
-                x = torch.arange(num_samples).long()
+                x = arange(num_samples).long()
+            else:
+                raise ValueError("Dataset split not recognized")
 
         return self.graph(x)
 
     def set_evaluation_split(self, split: Split):
+        self.split = split
         for classifier in self.get_classifiers():
-            classifier.set_evaluation_split(split)
+            classifier.set_evaluation_split(self.split)
 
     def get_evaluation_split(self):
         return self.split
@@ -93,6 +97,12 @@ class System(torch.nn.Module):
 
     def __str__(self):
         return str(self.graph.modules())
+
+    def __sizeof__(self):
+        # Returns the number of Bytes of the ensemble object
+        mem_params = sum([param.nelement() * param.element_size() for param in self.parameters()])
+        mem_bufs = sum([buf.nelement() * buf.element_size() for buf in self.buffers()])
+        return mem_params + mem_bufs
 
     def copy(self):
         raise ValueError("Not implemented")
