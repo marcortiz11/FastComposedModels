@@ -1,26 +1,20 @@
 import torch
 from Source.io_util import read_pickle
 from Source.pytorch.component import Component
-from enum import Enum
-
-
-class Split(Enum):
-    TRAIN = 1
-    TEST = 2
-    VAL = 3
+from Data.datasets import Split
 
 
 class ClassifierMetadata(Component):
 
     def __init__(self, path_to_pickle: str, split=Split.VAL):
+        # Call component's class constructor
         self.path = path_to_pickle
         self.split = split
-        # This way predictions can be manipulated on GPU
-        # self.register_buffer("predictions", None)
-        # Call component's class constructor
         metadata = read_pickle(self.path)
         parameters = metadata['metrics']['params']
         super().__init__(p=parameters)
+        # This way predictions can be manipulated on GPU
+        self.register_buffer("predictions", None)
 
     def forward(self, ids: torch.LongTensor) -> torch.Tensor:
         """
@@ -39,7 +33,8 @@ class ClassifierMetadata(Component):
 
         precomputed_pred = torch.from_numpy(precomputed_pred)
         self.update_processing_time(ids.numel() * time_batch_128/128.0)
-        return precomputed_pred[ids]
+        self.predictions = precomputed_pred[ids].to(ids.device)
+        return self.predictions
 
     def set_evaluation_split(self, split: Split):
         self.split = split

@@ -9,10 +9,9 @@ class Trigger(Component):
         self.th = torch.nn.Parameter(torch.scalar_tensor(th))
 
     def forward(self, logits: torch.Tensor) -> torch.Tensor:
-        probability = torch.nn.Softmax(dim=1)(logits)
-        max_prob_class = torch.max(probability, dim=1)
-        mask = torch.le(max_prob_class.values, self.th)
-        return mask  # mask=1 refine; mask=0 okay
+        max_prob_class = torch.nn.Softmax(dim=1)(logits).max(1)
+        mask = torch.le(max_prob_class.values, self.th).bool()
+        return mask  # mask=1 classify again; mask=0 classification okay
 
     def update_threshold(self, th: float):
         self.th = torch.nn.Parameter(torch.tensor(th))

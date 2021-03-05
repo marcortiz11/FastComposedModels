@@ -19,3 +19,4 @@ class Component(torch.nn.Module):
 
     def get_num_parameters(self):
         return self.parameters
+
