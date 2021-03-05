@@ -1,5 +1,5 @@
 from Source.genetic_algorithm.operations_mutation import __make_data_and_dataset
-import Source.make_util as make
+import Source.protobuf.make_util as make
 from Examples.compute.chain_genetic_algorithm.utils import get_classifier_index
 import copy
 import os
@@ -256,7 +256,7 @@ def merge_two_chains(a, b):
         m_system.add_data(data_)
 
     # 3) Finally add merger on m_system
-    import Source.FastComposedModels_pb2 as fcm
+    import Source.protobuf.FastComposedModels_pb2 as fcm
     merger = make.make_merger('Merger', [a.get_start(), "1_"+b.get_start()],
                               merge_type=fcm.Merger.AVERAGE)
     m_system.set_start('Merger')

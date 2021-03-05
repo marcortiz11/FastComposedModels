@@ -1,5 +1,5 @@
 import Source.io_util as io
-import Source.make_util as make
+import Source.protobuf.make_util as make
 import Source.system_builder as sb
 import Source.system_evaluator as eval
 import numpy as np

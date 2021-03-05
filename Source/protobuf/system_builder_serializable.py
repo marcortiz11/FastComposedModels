@@ -1,4 +1,4 @@
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.FastComposedModels_pb2 as fcm
 import copy
 import warnings
 

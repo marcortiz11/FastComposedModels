@@ -3,15 +3,17 @@ EARN following GP genetic operations format under NGSA2 elitism selection
 """
 
 from Examples.compute.bagging_boosting_of_chains_GA.main import *
+import Examples.compute.bagging_boosting_of_chains_GA.main as main
 from Source.genetic_algorithm.fitting_functions import normalize_error_time_params as f_norm
 from Source.genetic_algorithm.moo import fast_non_dominated_sort, compute_crowding_distance, compute_hvolume
-import Examples.compute.bagging_boosting_of_chains_GA.main as main
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.FastComposedModels_pb2 as fcm
 import numpy as np
+
 del globals()["mutation_operation"]
 del globals()["generate_offspring"]
 del globals()["crossover_operation_v2"]
 del globals()["generate_initial_population"]
+del globals()["evaluate_population"]
 
 
 def generate_initial_population():
@@ -30,7 +32,7 @@ def generate_initial_population():
     return P
 
 
-def mutation_operation(P: list, rank_dist:np.ndarray) -> list:
+def mutation_operation(P:list, rank_dist:np.ndarray) -> list:
 
     # Tournament selection
     rank = rank_dist[:, 0]
@@ -52,14 +54,14 @@ def mutation_operation(P: list, rank_dist:np.ndarray) -> list:
 
             # Merger mutation: Add one more classifier
             if operation == 0:
-                c_file_new = utils.pick_random_classifier(main.args)
-                c_id_new = get_classifier_name(c_file_new)
-                c_id_new = str(number_merged) + "_" + c_id_new
-                om.add_classifier_to_merger(new_p, component.id, c_id_new, c_file_new)
+                    c_file_new = utils.pick_random_classifier(main.args)
+                    c_id_new = get_classifier_name(c_file_new)
+                    c_id_new = str(number_merged) + "_" + c_id_new
+                    om.add_classifier_to_merger(new_p, component.id, c_id_new, c_file_new)
 
             # Merger mutation: Change merging protocol
             elif operation == 1:
-                merge_protocol = 6 if component.merge_type == 2 else 2
+                merge_protocol = 6 if component.merge_type == 0 else 0
                 om.change_merging_protocol(new_p, component.id, merge_protocol=merge_protocol)
 
         elif component.DESCRIPTOR.name == "Classifier":
@@ -67,9 +69,9 @@ def mutation_operation(P: list, rank_dist:np.ndarray) -> list:
 
             # Classifier mutation: Extend a chain
             if operation == 0:
-                c_file_new = utils.pick_random_classifier(main.args)
-                c_id_new = (component.id[0] + '_' if '0' < component.id[0] <= '9' else '') + get_classifier_name(c_file_new)
-                om.extend_merged_chain(new_p, component.id, c_id_new, th=0.5, c_file_new=c_file_new)
+                    c_file_new = utils.pick_random_classifier(main.args)
+                    c_id_new = (component.id[0] + '_' if '0' < component.id[0] <= '9' else '') + get_classifier_name(c_file_new)
+                    om.extend_merged_chain(new_p, component.id, c_id_new, th=0.5, c_file_new=c_file_new)
 
             # Classifier mutation: Replace a classifier
             if operation == 1:
@@ -133,6 +135,27 @@ def generate_offspring(P:list, rank_dist: np.ndarray, o=None) -> list:
     return [offspring for key, offspring in offspring_dict.items()]
 
 
+def evaluate_population(P:list, phases=["test", "val"]) -> list:
+
+    R = []
+
+    for i, p in enumerate(P):
+        r = ev.evaluate(p, p.get_start(), phases=phases)
+
+        if main.args.device == 'cpu':
+            from Source.iotnets.main_run_chain import time_ensemble_cpu
+            if 'val' in phases:
+                r.val['system'].time = time_ensemble_cpu(p, main.args.dataset, 128, phase="val")
+            if 'test' in phases:
+                r.test['system'].time = time_ensemble_cpu(p, main.args.dataset, 128, phase='test')
+        elif main.args.device == 'gpu':
+            raise ValueError('Real time evaluation of an ensemble on a GPU device is not supported')
+
+        R.append(r)
+
+    return R
+
+
 def argument_parse(argv):
     parser = argparse.ArgumentParser(usage="main.py [options]",
                                      description="Genetic algorithm for finding the best chain under environment constraints.")
@@ -144,11 +167,11 @@ def argument_parse(argv):
     parser.add_argument("--step_th", default=0.1, type=float, help="Quant modification in threshold")
     parser.add_argument("--pm", default=0.2, type=float, help="Probability of mutation")
     parser.add_argument("--rm", default=0.8, type=float, help="Rate of mutation")
+    parser.add_argument("--rm_last", default=None, type=float, help="If initialized, EARN incrases/decreases rm iteratively until reaching rm_last")
     parser.add_argument("--k", default=10, type=int, help="Tournament size")
     parser.add_argument("--a", nargs='+', default=[1, 1, 1], type=float, help="Fitting function's weight")
     # Execution parameters
     parser.add_argument("--plot", default=0, type=int, help="Plot the ensembles generated every generation")
-    parser.add_argument("--cores", default=0, type=int, help="Parallel evaluation of the ensembles")
     parser.add_argument("--device", default="none", type=str, help="Device where to execute the ensembles (cpu, gpu or none)")
     parser.add_argument("--comment", default="", type=str, help="")
     parser.add_argument("--experiment", default="main_NGSA2.py")
@@ -169,7 +192,7 @@ if __name__ == "__main__":
     main.args = argument_parse(sys.argv[1:])
 
     # Create a temporal folder for the triggers models to be stored during the execution
-    os.environ['TMP'] = 'Definitions/Classifiers/tmp/'+main.args.dataset[12:-15]
+    os.environ['TMP'] = 'Definitions/Classifiers/tmp/'+main.args.dataset
     if not os.path.exists(os.path.join(os.environ['FCM'], os.environ['TMP'])):
         os.makedirs(os.path.join(os.environ['FCM'], os.environ['TMP']))
     random.seed()
@@ -194,11 +217,12 @@ if __name__ == "__main__":
     iteration = 0
     hvolume_previous = -1
     hvolume_current = 0
+    rm_update = (main.args.rm_last - main.args.rm)/main.args.iterations if main.args.rm_last is not None else 0
 
-    while iteration < main.args.iterations or hvolume_current > hvolume_previous:
+    while iteration < main.args.iterations:  # or hvolume_current > hvolume_previous:
 
         start = time.time()
-
+        
         # Generate offspring and evaluate
         P_offspring = generate_offspring(P, rank_dist)
         R_offspring = evaluate_population(P_offspring, phases=["test", "val"])
@@ -231,6 +255,7 @@ if __name__ == "__main__":
         individuals_fitness_per_generation += [(ids, rank_dist)]
 
         iteration += 1
+        main.args.rm += rm_update
         hvolume_previous = hvolume_current
         hvolume_current = compute_hvolume(obj)
 

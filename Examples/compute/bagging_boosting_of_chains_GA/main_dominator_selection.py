@@ -1,6 +1,6 @@
 import Examples.compute.bagging_boosting_of_chains_GA.main as main
 import Source.io_util as io
-import Source.genetic_algorithm.selection as selection
+from Source.genetic_algorithm.moo import non_dominated_selection
 import Source.genetic_algorithm.fitting_functions as fit_fun
 import Source.genetic_algorithm.operations_breed as ob
 import Examples.compute.chain_genetic_algorithm.utils as utils
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     limits = fit_fun.make_limits_dict()
     fit_fun.update_limit_dict(limits, R_dict_models, phase="val")
 
-    obj = fit_fun.normalize_error_time_params(R, main.args.a, limits)
+    obj = fit_fun.normalize_error_time_params(R, limits)
 
     # Start the loop over generations
     iteration = 0
@@ -174,13 +174,13 @@ if __name__ == "__main__":
         # Generate offspring and evaluate
         P_offspring = generate_offspring(P, obj)
         R_offspring = evaluate_population(P_offspring)
-        obj_offspring = fit_fun.normalize_error_time_params(R_offspring, main.args.a, limits)
+        obj_offspring = fit_fun.normalize_error_time_params(R_offspring, limits)
 
         # Selection
         P_generation = P + P_offspring
         R_generation = R + R_offspring
         obj_generation = np.vstack((obj, obj_offspring))
-        selected = selection.non_dominated_selection(obj_generation)
+        selected = non_dominated_selection(obj_generation)
 
         # Population Generation i+1
         P = [P_generation[i] for i in selected]

@@ -1,8 +1,8 @@
 import Source.system_builder as sb
-import Source.make_util as make
+import Source.protobuf.make_util as make
 import Source.io_util as io
 import Source.system_evaluator as eval
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.FastComposedModels_pb2 as fcm
 import os
 
 

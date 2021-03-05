@@ -5,17 +5,18 @@ from Source.pytorch.trigger import Trigger
 from Source.pytorch.chain import Chain
 from Source.pytorch.system import System
 from Source.io_util import read_pickle
+import os
 
 
 class TestChain(unittest.TestCase):
 
     def setUp(self):
         self.c1 = ClassifierMetadata(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
         self.c2 = ClassifierMetadata(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
         self.c3 = ClassifierMetadata(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_MobileNetV2_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_MobileNetV2_ref_0.pkl")
         self.t1 = Trigger(0.0)
         self.t2 = Trigger(0.0)
         self.chain = Chain([self.c1, self.t1, self.c2, self.t2, self.c3])
@@ -27,13 +28,13 @@ class TestChain(unittest.TestCase):
         self.t2.update_threshold(0.0)
 
         # Dataset info
-        metadata = read_pickle("C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+        metadata = read_pickle(os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
         # time = metadata["test"]["gt"]
         ids = metadata["test"]["id"]
         input = torch.range(0, len(ids)-1).long()
-        predictions = self.ensemble(input)
-        predictions_classifier_c3 = self.c3(input)
-        equal = torch.equal(predictions, predictions_classifier_c3)
+        predictions = self.ensemble(torch.zeros((1), dtype=torch.long))
+        predictions_classifier_c1 = self.c1(torch.zeros((1), dtype=torch.long))
+        equal = torch.equal(predictions, predictions_classifier_c1)
         self.assertEqual(True, equal)
 
     def test_predictions_threshold_1(self):
@@ -42,22 +43,22 @@ class TestChain(unittest.TestCase):
         self.t2.update_threshold(1.1)
 
         # Dataset info
-        metadata = read_pickle("C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+        metadata = read_pickle(os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
         # time = metadata["test"]["gt"]
         ids = metadata["test"]["id"]
         input = torch.range(0, len(ids)-1).long()
         predictions = self.ensemble(input)
-        predictions_classifier_c1 = self.c1(input)
-        equal = torch.equal(predictions, predictions_classifier_c1)
+        predictions_classifier_c3 = self.c3(input)
+        equal = torch.equal(predictions, predictions_classifier_c3)
         self.assertEqual(True, equal)
 
     def test_parameter_count(self):
         metadata1 = read_pickle(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
         metadata2 = read_pickle(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
         metadata3 = read_pickle(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_MobileNetV2_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_MobileNetV2_ref_0.pkl")
 
         true_count = metadata1["metrics"]["params"] + \
                      metadata2["metrics"]["params"] + \
@@ -65,17 +66,17 @@ class TestChain(unittest.TestCase):
 
         self.assertEqual(self.ensemble.get_num_parameters(), true_count)
 
-    def test_time_threshold_0(self):
+    def test_time_threshold_1(self):
 
-        self.t1.update_threshold(0.0)
-        self.t2.update_threshold(0.0)
+        self.t1.update_threshold(1.1)
+        self.t2.update_threshold(1.1)
 
         metadata1 = read_pickle(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
         metadata2 = read_pickle(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
         metadata3 = read_pickle(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_MobileNetV2_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_MobileNetV2_ref_0.pkl")
 
         ids = metadata1["test"]["id"]
         inference_t = metadata1["metrics"]["time"]/128.0 + \
@@ -86,13 +87,14 @@ class TestChain(unittest.TestCase):
         self.ensemble(input)
         self.assertEqual(self.ensemble.get_processing_time(), true_time)
 
-    def test_time_threshold_1(self):
+    def test_time_threshold_0(self):
 
-        self.t1.update_threshold(1.1)
-        self.t2.update_threshold(1.1)
+        self.t1.update_threshold(0.0)
+        self.t2.update_threshold(0.0)
+        print(self.t1.get_threshold_value())
 
         metadata1 = read_pickle(
-            "C:/Users/bscuser/Projects/FastComposedModels/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
+            os.environ["FCM"]+"/Definitions/Classifiers/sota_models_cifar10-32-dev_validation/V001_DenseNet121_ref_0.pkl")
 
         ids = metadata1["test"]["id"]
         inference_t = metadata1["metrics"]["time"]/128.0

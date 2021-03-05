@@ -1,11 +1,11 @@
 import unittest
-import Source.system_builder_serializable as sb
-import Source.make_util as mutils
+import Source.protobuf.system_builder_serializable as sb
+import Source.protobuf.make_util as mutils
 import Source.io_util as io
 from Source.system_evaluator import evaluate
 from Source.system_evaluator_utils import pretty_print
 from Source.genetic_algorithm.operations_mutation import add_classifier_to_merger
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.FastComposedModels_pb2 as fcm
 
 import unittest
 import os

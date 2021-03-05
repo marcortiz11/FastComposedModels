@@ -1,7 +1,7 @@
-import Source.make_util as make
+import Source.protobuf.make_util as make
 import Source.system_evaluator as seval
-import Source.system_builder_serializable as sb
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.system_builder_serializable as sb
+import Source.protobuf.FastComposedModels_pb2 as fcm
 from Source.system_evaluator import evaluate
 from Source.system_evaluator_utils import pretty_print
 import os

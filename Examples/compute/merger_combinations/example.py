@@ -1,6 +1,6 @@
 import numpy as np
-import Source.system_builder_serializable as sb
-import Source.make_util as make
+import Source.protobuf.system_builder_serializable as sb
+import Source.protobuf.make_util as make
 import Source.system_evaluator as eval
 import Source.io_util as io
 from threading import Thread, Lock

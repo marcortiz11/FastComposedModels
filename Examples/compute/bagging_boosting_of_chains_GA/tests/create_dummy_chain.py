@@ -1,6 +1,6 @@
 import Source.io_util as io
-import Source.make_util as make
-import Source.system_builder_serializable as sb
+import Source.protobuf.make_util as make
+import Source.protobuf.system_builder_serializable as sb
 import os
 
 

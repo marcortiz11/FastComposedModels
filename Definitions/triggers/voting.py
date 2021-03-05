@@ -1,4 +1,4 @@
-import Source.make_util as make
+import Source.protobuf.make_util as make
 import Source.io_util as io
 import numpy as np
 

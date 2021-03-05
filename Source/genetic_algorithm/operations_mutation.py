@@ -1,25 +1,27 @@
 from Source.genetic_algorithm.fitting_functions import f1_time_param_penalization as fit
 from Source.system_evaluator import evaluate
-import Source.FastComposedModels_pb2 as fcm
-import Source.make_util as make
+import Source.protobuf.FastComposedModels_pb2 as fcm
+import Source.protobuf.make_util as make
 import Source.io_util as io
 import numpy as np
 import os
 
 
 def __update_dataset(c_file, train_path, test_path, val_path, th):
+
     # Create dataset
     model = io.read_pickle(c_file)
+
     # Test
     dataset_test = model['test']
     dataset_test['th'] = th
     io.save_pickle(test_path, dataset_test)
+
     # Train
-    """
     dataset_train = model['train']
     dataset_train['th'] = th
     io.save_pickle(train_path, dataset_train)
-    """
+
     # Validation
     dataset_val = model['val']
     dataset_val['th'] = th

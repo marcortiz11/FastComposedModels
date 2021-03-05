@@ -1,7 +1,7 @@
 """
     Definition of methods that build a protobuf message from raw Data
 """
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.FastComposedModels_pb2 as fcm
 import numpy as np
 
 

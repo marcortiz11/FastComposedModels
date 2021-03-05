@@ -4,9 +4,9 @@ from Source.genetic_algorithm.fitting_functions import f2_time_param_penalizatio
 from Source.genetic_algorithm.fitting_functions import make_limits_dict, update_limit_dict
 from Source.io_util import read_pickle
 from Source.system_evaluator import evaluate
-import Source.make_util as mutil
-import Source.system_builder_serializable as sb
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.make_util as mutil
+import Source.protobuf.system_builder_serializable as sb
+import Source.protobuf.FastComposedModels_pb2 as fcm
 
 from random import random, choice, randint
 import matplotlib.pyplot as plt

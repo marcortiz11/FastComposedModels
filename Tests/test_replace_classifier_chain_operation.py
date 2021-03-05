@@ -1,5 +1,5 @@
-import Source.system_builder_serializable as sb
-import Source.make_util as mutils
+import Source.protobuf.system_builder_serializable as sb
+import Source.protobuf.make_util as mutils
 import Source.io_util as io
 from Source.system_evaluator import evaluate
 from Source.system_evaluator_utils import  pretty_print

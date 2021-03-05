@@ -1,5 +1,5 @@
 import Source.system_evaluator as eval
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.FastComposedModels_pb2 as fcm
 from Source.math_util import softmax
 import numpy as np
 import math
