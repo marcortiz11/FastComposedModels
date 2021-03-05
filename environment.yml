@@ -1,6 +1,12 @@
 name: FastComposedModels
+channels:
+        - pytorch
+        - conda-forge
+        - defaults
 dependencies:
-        - python=3.*
-        - numpy
+        - python>=3.6.*
+        - numpy>=1.16.*
         - matplotlib
         - protobuf
+        - pytorch=1.6.*
+        - torchvision=0.7.*
