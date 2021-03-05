@@ -1,7 +1,37 @@
 import numpy as np
 import Source.io_util as io
-import Source.make_util as make
-import Source.FastComposedModels_pb2 as fcm
+import Source.protobuf.make_util as make
+import Source.protobuf.FastComposedModels_pb2 as fcm
+from enum import Enum
+from time import perf_counter
+
+
+class Metrics(object):
+
+    __slots__ = ('accuracy',
+                 'time',
+                 'time_max',
+                 'time_min',
+                 'time_std',
+                 'instances',  # How many instances executed by the model
+                 'instance_model',  # Which model executes the instance?
+                 'cm',  # Confusion matrix
+                 'params',
+                 'ops',)
+
+    def __init__(self):
+        self.time = 0
+        self.accuracy = 0
+        self.params = 0
+        self.ops = 0
+        self.time_max = 0
+        self.time_min = 0
+        self.time_std = 0
+        self.instances = 0
+
+
+class Results(object):
+    __slots__ = ('train', 'test', 'val')
 
 
 def get_accuracy_dictionary(pred, gt):
@@ -94,3 +124,13 @@ def pretty_print(results):
         print("\t\t\t {}sec Average".format(results.val[key].time))
         print("\t\t\t {}sec Max".format(results.val[key].time_max))
         print("\t\t\t {}sec Min".format(results.val[key].time_min))
+
+
+class CatchTime(object):
+
+    def __enter__(self):
+        self.time = perf_counter()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.time = perf_counter() - self.time

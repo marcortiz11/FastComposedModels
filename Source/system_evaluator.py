@@ -1,39 +1,12 @@
 import Source.system_evaluator_utils as eval_utils
 from Source.pytorch.system import System
-from Source.pytorch.classifier_metadata import Split
 from typing import List
-import Source.make_util as make
+import Source.protobuf.make_util as make
 import Source.io_util as io
 import numpy as np
 import warnings
-
-
-class Metrics(object):
-
-    __slots__ = ('accuracy',
-                 'time',
-                 'time_max',
-                 'time_min',
-                 'time_std',
-                 'instances',  # How many instances executed by the model
-                 'instance_model',  # Which model executes the instance?
-                 'cm',  # Confusion matrix
-                 'params',
-                 'ops',)
-
-    def __init__(self):
-        self.time = 0
-        self.accuracy = 0
-        self.params = 0
-        self.ops = 0
-        self.time_max = 0
-        self.time_min = 0
-        self.time_std = 0
-        self.instances = 0
-
-
-class Results(object):
-    __slots__ = ('train', 'test', 'val')
+from Source.system_evaluator_utils import Metrics, Results
+from Data.datasets import Split
 
 
 def get_dummy_result():
@@ -210,18 +183,18 @@ def __evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=No
     assert phase in ["train", "test", "val"], "Error: Phase in evaluation should be train, test or validation"
 
     if c.DESCRIPTOR.name == "Merger":
-        import Source.merger_evaluator as merger_eval
+        import Source.protobuf.merger_evaluator as merger_eval
         contribution = merger_eval.evaluate(sys, results, c,
                                             check_classifiers, classifier_dict,
                                             input_ids=input_ids, phase=phase)
     elif c.DESCRIPTOR.name == "Classifier":
-        import Source.classifier_evaluator as classifier_eval
+        import Source.protobuf.classifier_evaluator as classifier_eval
         if check_classifiers:
             check_valid_classifier(c)
         contribution = classifier_eval.evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids, phase)
 
     elif c.DESCRIPTOR.name == "Trigger":
-        import Source.trigger_evaluator as trigger_eval
+        import Source.protobuf.trigger_evaluator as trigger_eval
         eval_utils.train_trigger(sys, c)
         if check_classifiers:
             check_valid_classifier(c.classifier)
@@ -230,7 +203,7 @@ def __evaluate(sys, results, c, check_classifiers, classifier_dict, input_ids=No
     return contribution
 
 
-def evaluate(sys, check_classifiers=False, evaluate_train=False, classifier_dict=None, phases=[Split.TEST, Split.VAL]):
+def evaluate(sys, check_classifiers=False, evaluate_train=False, classifier_dict=None, phases=[Split.TEST, Split.VAL], device="cpu"):
 
     """
     :param sys: Built system to evaluate
@@ -244,7 +217,7 @@ def evaluate(sys, check_classifiers=False, evaluate_train=False, classifier_dict
     """
 
     if isinstance(sys, System):
-        eval = evaluate_pytorch(sys, phases)
+        eval = evaluate_pytorch(sys, phases, device=device)
 
     else:
         eval = Results()
@@ -289,7 +262,7 @@ def evaluate(sys, check_classifiers=False, evaluate_train=False, classifier_dict
     return eval
 
 
-def evaluate_pytorch(ensemble: System, phases: List[Split], dataset=None) -> Results:
+def evaluate_pytorch(ensemble: System, phases: List[Split], dataset=None, device='cpu') -> Results:
 
     import torch
 
@@ -302,26 +275,39 @@ def evaluate_pytorch(ensemble: System, phases: List[Split], dataset=None) -> Res
     eval.train['system'] = Metrics()
     eval.val['system'] = Metrics()
 
+    ensemble.to(device)
+
+    metadata = io.read_pickle(ensemble.get_classifiers()[0].get_model())
+
     if Split.TRAIN in phases:
         ensemble.set_evaluation_split(Split.TRAIN)
-        predictions = ensemble(None)  # Evaluate ensemble
-        gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["train"]["gt"])
+        input = torch.arange(len(metadata["train"]["id"])).to(device)
+        gt_labels = torch.tensor(metadata["train"]["gt"]).to(device)
+        # Run
+        predictions = ensemble(input)  # Evaluate ensemble
+        # Performance
         eval.train['system'].accuracy = (torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)).float() / gt_labels.numel()).item()
         eval.train['system'].time = ensemble.get_processing_time()
         eval.train['system'].params = ensemble.get_num_parameters()
 
     if Split.TEST in phases:
         ensemble.set_evaluation_split(Split.TEST)
-        predictions = ensemble(None)  # Evaluate ensemble
-        gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["test"]["gt"])
+        input = torch.arange(len(metadata["test"]["id"])).to(device)
+        gt_labels = torch.tensor(metadata["test"]["gt"]).to(device)
+        # Run
+        predictions = ensemble(input)  # Evaluate ensemble
+        # Performance
         eval.test['system'].accuracy = (torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)).float() / gt_labels.numel()).item()
         eval.test['system'].time = ensemble.get_processing_time()
         eval.test['system'].params = ensemble.get_num_parameters()
 
     if Split.VAL in phases:
         ensemble.set_evaluation_split(Split.VAL)
-        predictions = ensemble(None)  # Evaluate ensemble
-        gt_labels = torch.tensor(io.read_pickle(ensemble.get_classifiers()[0].get_model())["val"]["gt"])
+        input = torch.arange(len(metadata["test"]["id"])).to(device)
+        gt_labels = torch.tensor(metadata["test"]["gt"]).to(device)
+        # Run
+        predictions = ensemble(input)  # Evaluate ensemble
+        # Metrics
         eval.val['system'].accuracy = (torch.sum(torch.eq(predictions.argmax(dim=1), gt_labels)).float() / gt_labels.numel()).item()
         eval.val['system'].time = ensemble.get_processing_time()
         eval.val['system'].params = ensemble.get_num_parameters()
