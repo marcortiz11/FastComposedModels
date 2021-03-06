@@ -44,3 +44,6 @@ class Chain(Component):
     def extend_chain(self, component_list: List[Component]):
         self.chained_modules.extend(component_list)
 
+    def get_chained_modules(self) -> List:
+        return [module for module in self.chained_modules]
+

@@ -73,8 +73,12 @@ class Merger(Component):
     def get_merge_protocol(self):
         return self.protocol
 
+    def get_merged_modules(self) -> List:
+        return [module for module in self.merged_modules]
+
     def update_merge_protocol(self, p: MergeProtocol):
         self.protocol = p
 
     def add_classifier(self, c: Component):
         self.merged_modules.extend([c])
+
