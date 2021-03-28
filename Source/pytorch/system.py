@@ -42,6 +42,9 @@ class System(Module):
         for classifier in self.get_classifiers():
             classifier.set_evaluation_split(self.split)
 
+    def set_start(self, start:Component):
+        self.graph = start
+
     def get_evaluation_split(self):
         return self.split
 
@@ -79,6 +82,9 @@ class System(Module):
             if isinstance(module, Chain):
                 chain_list.append(module)
         return chain_list
+
+    def get_start(self):
+        return self.graph
 
     def get_sysid(self):
         return hash(self)
